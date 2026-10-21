@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "status": "PLANNED",
+  "base_model": "OWNER_SELECT_LICENSED_MODEL",
+  "base_model_parameters": 1500000000,
+  "method": "QLORA",
+  "quantization": "4-bit planned",
+  "vram_budget_gb": 8,
+  "batch_size": 1,
+  "gradient_accumulation": 8,
+  "learning_rate": 0.0001,
+  "epochs": 1,
+  "precision": "fp16 planned; validate runtime first",
+  "full_parameter_training": false,
+  "execution": "NOT_IMPLEMENTED"
+}

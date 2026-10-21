@@ -1,0 +1,7 @@
+# Instalar Torch primeiro pelo índice oficial cu126; ver docs/cognition/TRAINING.md.
+torch==2.9.1+cu126
+torchvision==0.24.1+cu126
+transformers==4.57.1
+peft==0.17.1
+accelerate==1.11.0
+bitsandbytes==0.48.1

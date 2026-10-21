@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=MARK
+GenericName=Assistente pessoal
+Comment=Converse com o assistente MARK
+Exec=scripts/mark-desktop.sh
+Icon=assets/mark.svg
+Terminal=false
+Categories=Utility;
+StartupNotify=true

@@ -1,0 +1,16 @@
+# Interface Gráfica Desktop (Workstation UI)
+PyQt6>=6.5.0
+
+# Criptografia autenticada do cofre e autenticação segura do cliente móvel
+cryptography>=41.0
+
+# Processamento de imagens e decodificação de quadros
+Pillow>=11.0,<13
+
+# Busca web opcional e memória conversacional
+ddgs>=9.0
+honcho-ai>=2.5,<3
+
+# Utilitários de ambiente e parsing XML seguro
+python-dotenv>=1.0.0
+defusedxml>=0.7.1

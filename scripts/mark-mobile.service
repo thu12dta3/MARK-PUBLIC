@@ -1,0 +1,16 @@
+[Unit]
+Description=MARK API privada para o celular (Tailscale Serve TLS 1.3 + ECDSA)
+Wants=ollama.service
+After=ollama.service network-online.target
+
+[Service]
+Type=simple
+ExecStartPre=-/usr/bin/tailscale serve --http=80 off
+ExecStartPre=-/usr/bin/tailscale serve --bg --https=443 http://127.0.0.1:8765
+ExecStart=%h/.local/bin/MARK --serve-mobile
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=240
+
+[Install]
+WantedBy=default.target

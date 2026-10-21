@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "src-rust/mark_core",
+    "src-rust/mark_link",
+]
+resolver = "2"

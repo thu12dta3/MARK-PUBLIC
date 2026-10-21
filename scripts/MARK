@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+exec "$HOME/MARK/scripts/run_mark.sh" "$@"

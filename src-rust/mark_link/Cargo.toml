@@ -1,0 +1,31 @@
+[package]
+name = "mark_link"
+version = "0.1.0"
+edition = "2021"
+description = "MARK Link — Camada de Conectividade Privada em Rust para o Ecossistema MARK"
+authors = ["Antigravity <mark-dev@mark.local>"]
+
+[lib]
+name = "mark_link"
+crate-type = ["rlib", "cdylib"]
+
+[[bin]]
+name = "mark-link"
+path = "src/main.rs"
+
+[dependencies]
+aes-gcm = "0.10.3"
+sha2 = "0.10.8"
+hkdf = "0.12.4"
+rand = "0.8.5"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+base64 = "0.22.1"
+zeroize = { version = "1.8.1", features = ["derive"] }
+p256 = { version = "0.13.2", features = ["ecdh", "ecdsa"] }
+quinn = "0.11"
+tokio = { version = "1.38", features = ["rt", "rt-multi-thread", "macros", "net", "io-util", "time"] }
+rcgen = "0.14"
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
+jni = { version = "0.21.1", default-features = false }
+

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "status": "CONSERVATIVE_EXPERIMENT",
+  "executor": "hf-qlora-v02",
+  "base_model": "Qwen/Qwen3-VL-4B-Instruct",
+  "base_model_parameters": 4400000000,
+  "method": "QLORA",
+  "quantization": "NF4 double quantization",
+  "vram_budget_gb": 7.5,
+  "batch_size": 1,
+  "gradient_accumulation": 4,
+  "learning_rate": 1e-05,
+  "epochs": 1,
+  "lora_rank": 8,
+  "lora_alpha": 16,
+  "max_sequence_length": 256,
+  "precision": "fp16",
+  "vision_frozen": true,
+  "full_parameter_training": false,
+  "automatic_activation": false
+}

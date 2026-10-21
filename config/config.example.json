@@ -1,0 +1,65 @@
+{
+  "ollama": {
+    "url": "http://127.0.0.1:11434",
+    "model": "qwen3-vl:4b-instruct",
+    "timeout": 180,
+    "num_predict": 2048,
+    "keep_alive": 0
+  },
+  "models": {
+    "chat": "qwen3-vl:4b",
+    "call": "qwen3-vl:4b-instruct"
+  },
+  "thinking": {
+    "chat": true,
+    "call": false
+  },
+  "camera": {
+    "scheme": "rtsps",
+    "host": "192.168.1.50",
+    "port": 8554,
+    "path": "/live",
+    "username": "",
+    "password": "",
+    "tls_verify": true,
+    "timeout": 20
+  },
+  "audio": {
+    "sample_rate": 16000,
+    "frame_ms": 30,
+    "threshold": 500,
+    "min_speech_seconds": 0.18,
+    "end_silence_seconds": 0.75,
+    "max_utterance_seconds": 12,
+    "calibration_seconds": 2,
+    "source": "default",
+    "sink": ""
+  },
+  "whisper": {
+    "binary": "whisper-cli",
+    "timeout": 90,
+    "wake_model": "/home/SEU_USUARIO/.local/share/mark/ggml-base.bin",
+    "command_model": "/home/SEU_USUARIO/.local/share/mark/ggml-small.bin"
+  },
+  "tts": {
+    "python": "/home/SEU_USUARIO/.local/share/mark/piper-env/bin/python",
+    "voice_pt": "/home/SEU_USUARIO/.local/share/mark/voices/pt_BR-faber-medium.onnx",
+    "voice_en": "/home/SEU_USUARIO/.local/share/mark/voices/en_US-lessac-medium.onnx",
+    "synth_timeout": 60,
+    "playback_timeout": 180,
+    "fallback_timeout": 60
+  },
+  "web": {
+    "enabled": true,
+    "timeout": 5
+  },
+  "memory": {
+    "max_messages": 6
+  },
+  "cognition": {
+    "enabled": true,
+    "model_provider": "ollama",
+    "knowledge_db": "/home/SEU_USUARIO/.local/state/mark/cognition/knowledge.sqlite3",
+    "telemetry": false
+  }
+}

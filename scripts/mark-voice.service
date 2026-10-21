@@ -1,0 +1,14 @@
+[Unit]
+Description=MARK escuta local por voz
+Wants=ollama.service
+After=ollama.service pipewire-pulse.service
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/MARK
+Restart=on-failure
+RestartSec=15
+TimeoutStopSec=240
+
+[Install]
+WantedBy=default.target
