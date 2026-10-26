@@ -26,7 +26,7 @@ tmp/*
 *.mp4
 *.AppImage
 *.so
-dist/mark-linux-x86_64/
+dist/
 
 # Laboratório: dados/checkpoints privados nunca são copiados automaticamente.
 training/datasets/

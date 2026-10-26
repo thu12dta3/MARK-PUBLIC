@@ -29,4 +29,4 @@ Fonte: documento “Levar a segurança do MARK Mobile 0.2 ao estado SECURITY COM
 | SEC-M23-001 | Campanha física SM-M236B/DS | Aparelho `SM-M236B` conectado; APK instalado, autorizado e chat respondido | Parcial: chamada, biometria adversarial e testes de ataque pendentes |
 | SEC-GATE-001 | Zero Critical/High conhecido e cobertura de segurança 100% | Gate 150 do documento | **FAIL / NOT TESTED**: não declarar SECURITY COMPLETE |
 
-Detalhes das ameaças e dos limites constam em [THREAT_MODEL.md](THREAT_MODEL.md). Pendências abertas constam em [SECURITY_DEBT.md](SECURITY_DEBT.md). Atualizar esta matriz após cada evidência real de teste, sem converter “código presente” em “PASS”.
+Detalhes das ameaças e dos limites constam em [THREAT_MODEL.md](THREAT_MODEL.md) e [PERMISSIONS_MATRIX.md](PERMISSIONS_MATRIX.md). Atualizar esta matriz após cada evidência real de teste, sem converter “código presente” em “PASS”.

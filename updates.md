@@ -1,5 +1,5 @@
 # Registro de Atualizações e Evolução Arquitetural — MARK
-**Versão Pública:** v1.1.0  
+**Versão Pública:** v1.2.0  
 **Data da Edição:** Outubro de 2026  
 **Classificação:** Documentação Técnica Pública  
 **Repositório:** [https://github.com/thu12dta3/MARK-PUBLIC](https://github.com/thu12dta3/MARK-PUBLIC)

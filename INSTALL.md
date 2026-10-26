@@ -11,7 +11,7 @@ O instalador configura automaticamente o ambiente isolado, ícones em alta resol
 Não requer privilégios de administrador (`root` ou `sudo`).
 
 ```bash
-# 1. Baixe e extraia o pacote tarball
+# 1. Baixe o pacote na aba Releases (https://github.com/thu12dta3/MARK-PUBLIC/releases) e extraia:
 tar -xzf mark-linux-x86_64.tar.gz
 
 # 2. Acesse a pasta extraída

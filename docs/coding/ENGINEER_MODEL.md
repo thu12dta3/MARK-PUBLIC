@@ -42,7 +42,7 @@ As lacunas de segurança globais já documentadas não foram corrigidas nesta et
 - Smoke test real no Ollama: gerou uma função iterativa de fatorial com validação negativa e exemplos; 119 tokens de saída em 7,31 s, dos quais 5,39 s foram carregamento reportado pelo Ollama. O verificador isolado do MARK aprovou a sintaxe (PASS); o código foi analisado, não executado. Pico de VRAM e RAM não foram amostrados, então permanecem não medidos.
 - A variante e as tags foram conferidas no [registro Ollama](https://ollama.com/R4C3R/qwen2.5-coder-7b-instruct-heretic/tags). O upstream do modelo base é [Qwen2.5-Coder](https://ollama.com/library/qwen2.5-coder).
 - A suíte ampla não foi executada antes das mudanças, portanto não há baseline de testes deste turno. Após a implementação, 156 testes focados passaram (`test_mobile_api`, `test_core`, `test_core_context`, `test_coding_verify`).
-- A auditoria da dívida geral continua em [SECURITY_DEBT.md](../SECURITY_DEBT.md): Tailscale HTTP legado, Bearer legado e lacunas de autorização continuam abertos. Esta integração não os corrige nem os amplia; tampouco eleva o estado geral de segurança do produto.
+- A auditoria de segurança e modelo de ameaças continua em [THREAT_MODEL.md](../THREAT_MODEL.md): defesas de rede, canais criptografados e lacunas de autorização são documentadas continuamente. Esta integração não eleva artificialmente o estado geral de segurança do produto.
 - Nenhuma branch foi criada, nenhum commit ou push foi feito, e o serviço/app de produção não foi reiniciado.
 
 ## Próxima validação necessária

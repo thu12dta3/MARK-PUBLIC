@@ -192,7 +192,7 @@ sequenceDiagram
 MARK provides an official universal Linux standalone package (`dist/mark-linux-x86_64.tar.gz`) featuring an interactive, user-friendly installer and complete FreeDesktop system integration (application menu launcher, taskbar/dock pinning with `StartupWMClass=MARK`, scalable SVG and multi-resolution PNG icons, and desktop shortcuts):
 
 ```bash
-# 1. Download and extract the universal package
+# 1. Download the package from GitHub Releases (https://github.com/thu12dta3/MARK-PUBLIC/releases) or build with packaging/build_tarball.sh
 tar -xzf mark-linux-x86_64.tar.gz
 cd mark-linux-x86_64
 
@@ -240,9 +240,10 @@ PYTHONPATH=.:src pytest tests/ -v
 cargo test --workspace
 ```
 
-### Verified Test Results (Release Audit v1.1.0)
-- **Python Automated Tests**: 850+ test cases passing (100% pass rate).
+### Verified Test Results (Release Audit v1.2.0)
+- **Python Automated Tests**: 1028 test cases passing (+ 176 subtests, 100% pass rate).
 - **Rust Native Unit Tests**: 72 test cases passing (14 in `mark_core`, 58 in `mark_link`).
+- **FreeDesktop Desktop Entry Validation**: `desktop-file-validate packaging/mark.desktop` (100% valid).
 - **Static Security Analysis**: Bandit scan clean (0 High / 0 Medium issues).
 - **Credential & Secret Scan**: 0 unmasked secrets, 0 private IP leaks detected.
 
@@ -261,6 +262,8 @@ cargo test --workspace
 
 MARK is released under the **GNU Affero General Public License v3.0 (AGPL-3.0)**. See [`LICENSE`](LICENSE) for complete terms.
 
+- **Documentation Index:** [`docs/README.md`](docs/README.md)
+- **Universal Linux Installation Guide:** [`INSTALL.md`](INSTALL.md)
 - **Technical Specification (PDF):** [`MARK_ENGINEERING_OVERVIEW.pdf`](MARK_ENGINEERING_OVERVIEW.pdf) / [`engineer.pdf`](engineer.pdf)
 - **Changelog & Architecture Updates:** [`updates.md`](updates.md)
 - **MARK Link Architecture Specification:** [`docs/architecture/MARK_LINK_ARCHITECTURE_AND_SPEC.md`](docs/architecture/MARK_LINK_ARCHITECTURE_AND_SPEC.md)

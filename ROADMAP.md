@@ -2,11 +2,11 @@
 
 ## Cognitive Foundation v0.1 — entrega atual
 
-Schemas, ingestão, busca local, citações, roteamento, providers, tools iniciais, dataset validator/split, MARKBench, experimentos, testes e documentação. Resultados e limitações reais em STATUS.md e MARK_COGNITIVE_FOUNDATION_REPORT.md.
+Schemas, ingestão, busca local, citações, roteamento, providers, tools iniciais, dataset validator/split, MARKBench, experimentos, testes e documentação. Resultados e status consolidados em [STATUS.md](STATUS.md) e [updates.md](updates.md).
 
 ## Cognitive Foundation v0.2 — execução parcial autorizada
 
-Etapas de calculadoras/assistência, recuperação de respostas vazias e QLoRA experimental começaram por solicitação explícita; não significam conclusão de toda v0.2. [Continuidade atual](docs/cognition/CONTINUITY_20261011.md), [experimentos de treino](docs/cognition/TRAINING_20261011.md). Bibliotecas maiores, embedding semântico e validação ampla permanecem pendentes.
+Etapas de calculadoras/assistência, recuperação de respostas vazias e QLoRA experimental começaram por solicitação explícita; não significam conclusão de toda v0.2. Ver [experimentos de treino](docs/cognition/TRAINING.md). Bibliotecas maiores, embedding semântico e validação ampla permanecem pendentes.
 
 1. Incorporar primeiras bibliotecas realmente licenciadas de Computing, Electronics e Chemistry; revisar metadata e datas.
 2. Avaliar embedding semântico pequeno, qualidade híbrida e reranking contra o baseline lexical, com orçamento local medido.
@@ -20,7 +20,7 @@ Etapas de calculadoras/assistência, recuperação de respostas vazias e QLoRA e
 
 Família Nano/Core/Deep/Vision/Embeddings, distillation, fallback por confiança, verifier mais completo e personalização controlada pelo proprietário. Não substituir recursos atuais para reduzir custo.
 
-A dívida de segurança permanece em docs/SECURITY_DEBT.md. Novas etapas e treinamento não começam automaticamente; respeitar aprovação de dados, decisões do proprietário e validações necessárias.
+A análise de riscos e modelos de ameaça permanecem em [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) e [docs/SECURITY_REQUIREMENTS.md](docs/SECURITY_REQUIREMENTS.md). Novas etapas e treinamento não começam automaticamente; respeitar aprovação de dados, decisões do proprietário e validações necessárias.
 
 ## Evoluções de produto
 
