@@ -187,29 +187,43 @@ sequenceDiagram
 - Rust 1.75+ (Cargo) for compiling native extensions.
 - Ollama service running locally with a multimodal model (`qwen2.5-coder:32b` or `qwen3-vl:4b`).
 
-### Step-by-Step Installation
+### Universal Linux Package (Recommended for Users)
+
+MARK provides an official universal Linux standalone package (`dist/mark-linux-x86_64.tar.gz`) featuring an interactive, user-friendly installer and complete FreeDesktop system integration (application menu launcher, taskbar/dock pinning with `StartupWMClass=MARK`, scalable SVG and multi-resolution PNG icons, and desktop shortcuts):
+
+```bash
+# 1. Download and extract the universal package
+tar -xzf mark-linux-x86_64.tar.gz
+cd mark-linux-x86_64
+
+# 2. Run the interactive installer (no root required)
+./install.sh
+```
+
+See the complete guide at [`INSTALL.md`](INSTALL.md) for multi-user system installation (`sudo ./install.sh --system`), taskbar pinning shortcuts across GNOME/KDE/XFCE, and uninstallation procedures.
+
+### Developer Installation from Source
+
+For developers modifying the codebase or building native Rust modules:
 
 ```bash
 # 1. Clone the repository
 git clone https://github.com/thu12dta3/MARK-PUBLIC.git
 cd MARK-PUBLIC
 
-# 2. Create virtual environment and install dependencies
-python3 -m venv .venv
-source .venv/bin/activate
+# 2. Quick installation via bundled installer
+./install.sh
+
+# Or manual setup:
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
-
-# 3. Build native Rust components
 cargo build --release --workspace
-cp target/release/libmark_core.so src/mark_core/mark_core.cpython-*.so 2>/dev/null || true
 
-# 4. Initialize configuration
-mkdir -p ~/.config/mark
-cp config/config.example.json ~/.config/mark/config.json
-chmod 0600 ~/.config/mark/config.json
-
-# 5. Launch MARK Desktop Workstation
-./scripts/mark-desktop.sh
+# 3. Launch Workstation UI or CLI
+mark-desktop
+# or
+mark
 ```
 
 ---

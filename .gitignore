@@ -20,10 +20,13 @@ tmp/*
 *.jpg
 *.jpeg
 *.png
+!assets/*.png
+!packaging/icons/**/*.png
 *.mp3
 *.mp4
 *.AppImage
 *.so
+dist/mark-linux-x86_64/
 
 # Laboratório: dados/checkpoints privados nunca são copiados automaticamente.
 training/datasets/

@@ -148,6 +148,15 @@ Esta versão consolida a maturidade da experiência de desenvolvimento e execuç
 - **Gestão de Sessões:** Criação e renomeação de conversas dedicadas no modo Engenheiro diretamente pela barra lateral.
 - **Cobertura de Testes:** Validado por `tests/test_ui_components.py` (27 testes de componentes e simetria visual).
 
+### 6.5 Pacote Distribuível Universal Linux e Integração com Desktop XDG
+- **Empacotamento Tarball Autônomo:** Criação de `packaging/build_tarball.sh` que gera o pacote universal `dist/mark-linux-x86_64.tar.gz` (com soma criptográfica SHA-256), empacotando os fontes de runtime, scripts, configurações e ativos sanitizados.
+- **Instalador Resiliente (`install.sh`):** Instalador visual e intuitivo com saída ANSI colorida, executável sem privilégios de superusuário (em `~/.local`) ou com `--system` (em `/opt` e `/usr/local`). Gerencia automaticamente a criação de ambiente virtual isolado (`venv`), prevenindo conflitos com restrições de distribuição moderna (PEP 668).
+- **Atalho no Menu de Aplicativos e Barra de Tarefas (FreeDesktop):** Geração do arquivo `mark.desktop` com `StartupWMClass=MARK`, permitindo que ambientes gráficos (GNOME Shell, KDE Plasma, XFCE, Cinnamon, MATE) vinculem e fixem a janela na barra de tarefas/dock perfeitamente, sem duplicar ícones.
+- **Ícones Multi-Resolução e SVG:** Instalação automática de ícones padronizados hicolor em 16x16, 24x24, 32x32, 48x48, 64x64, 128x128, 256x256, 512x512 e SVG vetorial escalável.
+- **Atalho Confiável na Área de Trabalho:** Detecção multilíngue do diretório da Área de Trabalho (`xdg-user-dir DESKTOP`), criação do atalho com permissão de execução e marcação confiável via GIO (`metadata::trusted true`) para execução com duplo clique no Nautilus/GNOME.
+- **Desinstalador Limpo (`uninstall.sh`):** Remoção completa e segura de links simbólicos, ícones, atalhos e diretórios de execução, com opção de preservação ou purga das configurações (`--purge`).
+- **Guia Completo de Instalação:** Adicionado [`INSTALL.md`](INSTALL.md) com passo a passo ilustrado e solução de dúvidas comuns de sistema.
+
 ---
 
 ## 7. Sumário Geral de Validação e Métricas de Qualidade
@@ -157,5 +166,6 @@ Esta versão consolida a maturidade da experiência de desenvolvimento e execuç
 | **Rust Core (`mark_core`)** | 14 testes | 100% | `PASSED` |
 | **Rust Mesh (`mark_link`)** | 58 testes | 100% | `PASSED` |
 | **Suíte Python Completa (`pytest`)** | 1028 testes (+ 176 subtestes) | 100% | `PASSED` |
+| **Validação de Desktop Entry** | `desktop-file-validate packaging/mark.desktop` | 100% | `VALID` |
 | **Auditoria Zero-Leak** | 0 caminhos privados / 0 credenciais / 0 hardware restrito | 100% | `VERIFIED` |
 

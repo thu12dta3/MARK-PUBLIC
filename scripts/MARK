@@ -1,2 +1,3 @@
 #!/usr/bin/env bash
-exec "$HOME/MARK/scripts/run_mark.sh" "$@"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec "$SCRIPT_DIR/run_mark.sh" "$@"

@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# MARK CLI Launcher
+# Universal Command-Line Launcher for MARK AI Assistant
+# ==============================================================================
+set -euo pipefail
+
+# Resolução do diretório da aplicação
+SELF_PATH="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || realpath "${BASH_SOURCE[0]}" 2>/dev/null || echo "${BASH_SOURCE[0]}")"
+BIN_DIR="$(cd "$(dirname "$SELF_PATH")" && pwd)"
+APP_DIR="$(cd "$BIN_DIR/.." && pwd)"
+
+# Resolução do interpretador Python isolado (venv prioritário)
+PYTHON="${MARK_PYTHON:-}"
+if [ -z "$PYTHON" ]; then
+    for candidate in \
+        "$APP_DIR/venv/bin/python" \
+        "$APP_DIR/.venv/bin/python" \
+        "$HOME/.local/share/mark/core-env/bin/python" \
+        python3 \
+        /usr/bin/python3
+    do
+        if [ -x "$candidate" ] || command -v "$candidate" >/dev/null 2>&1; then
+            PYTHON="$candidate"
+            break
+        fi
+    done
+fi
+
+if [ -z "$PYTHON" ]; then
+    echo "ERRO [MARK]: Interpretador Python não encontrado." >&2
+    echo "Instale o Python 3.9+ ou execute o instalador novamente: ./install.sh" >&2
+    exit 1
+fi
+
+# Configuração de Ambiente
+export PYTHONPATH="$APP_DIR/src${PYTHONPATH:+:$PYTHONPATH}"
+export MARK_APP_DIR="$APP_DIR"
+export MARK_HOME="${MARK_HOME:-$HOME/.config/mark}"
+
+# Garante criação defensiva do diretório de configuração do usuário
+mkdir -p "$MARK_HOME" 2>/dev/null || true
+
+# Execução do terminal/servidor CLI
+cd "$APP_DIR"
+exec "$PYTHON" -m mark.mark "$@"

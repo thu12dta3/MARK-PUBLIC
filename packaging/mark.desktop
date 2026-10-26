@@ -1,11 +1,32 @@
 [Desktop Entry]
-Version=1.0
+Version=1.5
 Type=Application
 Name=MARK
-GenericName=Assistente pessoal
-Comment=Converse com o assistente MARK
-Exec=scripts/mark-desktop.sh
+GenericName=Ambiente Operacional de IA
+GenericName[en]=AI Operating Environment
+Comment=Assistente executivo de inteligência artificial e workstation cognitiva
+Comment[en]=Executive AI desktop assistant and cognitive workstation
+Exec=scripts/mark-desktop.sh %U
 Icon=assets/mark.svg
 Terminal=false
-Categories=Utility;
+Categories=Utility;Development;Science;ArtificialIntelligence;
+Keywords=AI;IA;Assistant;Assistente;LLM;Voice;Vision;Autonomous;Chat;
 StartupNotify=true
+StartupWMClass=MARK
+MimeType=x-scheme-handler/mark;
+Actions=NewChat;Engineer;VoiceCall;
+
+[Desktop Action NewChat]
+Name=Nova Conversa
+Name[en]=New Chat
+Exec=scripts/mark-desktop.sh --new-chat
+
+[Desktop Action Engineer]
+Name=Espaço de Engenharia
+Name[en]=Engineering Workspace
+Exec=scripts/mark-desktop.sh --mode=engineer
+
+[Desktop Action VoiceCall]
+Name=Chamada de Voz
+Name[en]=Voice Call
+Exec=scripts/mark-desktop.sh --call
