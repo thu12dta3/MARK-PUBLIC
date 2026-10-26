@@ -2,12 +2,15 @@
 from __future__ import annotations
 import json, logging, re
 from .brain_direct import normalize
+from .cognition.integration import is_system_identity_query
 
 log = logging.getLogger("mark.brain")
 
 def route(text: str, cfg: dict, model_call) -> dict:
 
     n = normalize(text)
+    if is_system_identity_query(text):
+        return {"vision": False, "web": False}
     vision_terms = (
         "o que estou vendo", "o que estou olhando", "o que e isso", "o que e isto",
         "estou olhando", "que objeto", "que carro", "le o exercicio", "leia isso",

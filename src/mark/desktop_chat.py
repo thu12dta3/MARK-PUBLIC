@@ -12,12 +12,40 @@ from .memory import source_label
 from .desktop_theme import message_html, safe_web_link
 from .desktop_helpers import _mark_icon, _prepare_attachments, _request
 from .cognition.providers import sanitize_chat_output
+from .brain_prompt import SYSTEM, build_identity_system_prompt
 
 
 from .ui.widgets import ErrorCardWidget, MessageBubbleWidget
 
 
 class ChatMixin:
+    def _resolve_model_and_provider(self) -> tuple[str, str]:
+        """Extrai deterministicamente active_model_id e provider_name da interface ou estado salvo."""
+        active_model_id = ""
+        provider_name = ""
+        if hasattr(self, "model_selector") and self.model_selector is not None:
+            active_model_id = getattr(self.model_selector, "current_model_id", lambda: "")()
+            provider_name = getattr(self.model_selector, "current_provider", lambda: "")()
+
+        if not active_model_id:
+            active_model_id = getattr(self, "active_model_id", "") or getattr(self, "selected_model", "")
+        if not provider_name:
+            provider_name = getattr(self, "active_provider", "") or getattr(self, "selected_provider", "")
+
+        if not active_model_id and hasattr(self, "model_selector") and self.model_selector is not None:
+            data = self.model_selector.currentData()
+            if isinstance(data, str) and ":" in data:
+                p, m = data.split(":", 1)
+                provider_name = provider_name or p
+                active_model_id = m
+
+        return str(active_model_id), str(provider_name)
+
+    def get_system_prompt(self) -> str:
+        """Retorna o System Prompt dinâmico contendo active_model_id e regras de identidade."""
+        active_model_id, provider_name = self._resolve_model_and_provider()
+        return build_identity_system_prompt(active_model_id, provider_name) if active_model_id else SYSTEM
+
     def _prefill_message(self, text):
         if not self.busy:
             self.input.setPlainText(text)
@@ -34,6 +62,7 @@ class ChatMixin:
             self.empty_state = None
         row = QHBoxLayout()
         row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(0)
         bubble = MessageBubbleWidget(
             text=text,
             role=role,
@@ -46,6 +75,7 @@ class ChatMixin:
         if role == "assistant":
             row.addStretch(1)
         wrapper = QWidget()
+        wrapper.setStyleSheet("background: transparent; border: none; margin: 0px; padding: 0px;")
         wrapper.setLayout(row)
         self.chat_layout.insertWidget(self.chat_layout.count() - 1, wrapper)
         if auto_scroll:
@@ -105,7 +135,7 @@ class ChatMixin:
         try:
             try:
                 rows = db.execute(
-                    "SELECT role,content FROM conversation_messages WHERE conversation_id=? ORDER BY id DESC LIMIT 31",
+                    "SELECT role,content FROM conversation_messages WHERE conversation_id=? ORDER BY id DESC LIMIT 30",
                     (self.current_conversation_id,),
                 ).fetchall()
             except sqlite3.OperationalError:
@@ -115,7 +145,7 @@ class ChatMixin:
         rows.reverse()
         messages = [{"role": role, "content": content} for role, content in rows]
         messages.append({"role": "user", "content": [{"type": "text", "text": latest}]})
-        return messages[-32:]
+        return messages[-31:]
 
     def send_message(self, text: str | None = None):
         if isinstance(text, str):
@@ -196,13 +226,21 @@ class ChatMixin:
         context_payload = {
             "specialization": specialization,
             "session_id": conversation_id,
-            "cloud_authorized": preflight_ctx.get("cloud_authorized", False),
         }
         if self.current_project_id:
             context_payload["project_id"] = self.current_project_id
         if self.current_task_id:
             context_payload["task_id"] = self.current_task_id
-        profile = self.model_selector.currentData()
+        active_model_id, provider_name = self._resolve_model_and_provider()
+        system_prompt = build_identity_system_prompt(active_model_id, provider_name) if active_model_id else SYSTEM
+
+        profile = (
+            self.model_selector.currentData()
+            or self.model_selector.current_model_id()
+            or "mark"
+        )
+        if not isinstance(profile, str) or not profile:
+            profile = "mark"
         reasoning_level = self.reasoning_selector.currentData() if profile == "mark" else "instant"
         engineer_mode = specialization == "engineer"
         engineer_multimodal = engineer_mode and any(
@@ -231,6 +269,16 @@ class ChatMixin:
 
             def model_caller(msgs: list[dict[str, Any]]) -> str:
                 req_msgs = list(msgs)
+                identity_directive = build_identity_system_prompt(active_model_id, provider_name, base_system="") if active_model_id else ""
+                if req_msgs and req_msgs[0].get("role") == "system":
+                    cur_sys = str(req_msgs[0]["content"])
+                    if identity_directive not in cur_sys:
+                        req_msgs[0] = {"role": "system", "content": f"{identity_directive}\n\n{cur_sys}"}
+                    sys_content = req_msgs[0]["content"]
+                else:
+                    req_msgs.insert(0, {"role": "system", "content": system_prompt})
+                    sys_content = system_prompt
+
                 if req_msgs and isinstance(req_msgs[-1]["content"], str):
                     last_content = [{"type": "text", "text": req_msgs[-1]["content"]}]
                     for item in prepared:
@@ -239,13 +287,20 @@ class ChatMixin:
                             last_content.append({"type": "image_url", "image_url": {"url": data_url}})
                     req_msgs[-1] = {"role": req_msgs[-1]["role"], "content": last_content}
 
-                _, body = desktop_module._request("/v1/chat/completions", {
-                    "model": profile, "stream": False,
+                payload = {
+                    "model": profile,
+                    "stream": False,
                     "mark_reasoning_level": reasoning_level,
                     "messages": req_msgs,
+                    "system": sys_content,
+                    "system_prompt": sys_content,
+                    "active_model_id": active_model_id,
+                    "provider_name": provider_name,
+                    "cloud_authorized": preflight_ctx.get("cloud_authorized", False),
                     "mark_attachments": file_context,
                     "mark_context": context_payload,
-                })
+                }
+                _, body = desktop_module._request("/v1/chat/completions", payload)
                 result = json.loads(body)
                 return result["choices"][0]["message"]["content"]
 
@@ -257,13 +312,27 @@ class ChatMixin:
                         content.append({"type": "image_url", "image_url": {"url": data_url}})
                         content.append({"type": "text", "text": f"[Imagem anexada: {item['name']}]"})
                 request_messages[-1]["content"] = content
-                _, body = desktop_module._request("/v1/chat/completions", {
-                    "model": profile, "stream": False,
+
+                payload_messages = []
+                if request_messages and request_messages[0].get("role") == "system":
+                    payload_messages = [{"role": "system", "content": system_prompt}] + list(request_messages[1:])
+                else:
+                    payload_messages = [{"role": "system", "content": system_prompt}] + list(request_messages)
+
+                payload = {
+                    "model": profile,
+                    "stream": False,
                     "mark_reasoning_level": reasoning_level,
-                    "messages": request_messages,
+                    "messages": payload_messages,
+                    "system": system_prompt,
+                    "system_prompt": system_prompt,
+                    "active_model_id": active_model_id,
+                    "provider_name": provider_name,
+                    "cloud_authorized": preflight_ctx.get("cloud_authorized", False),
                     "mark_attachments": file_context,
                     "mark_context": context_payload,
-                })
+                }
+                _, body = desktop_module._request("/v1/chat/completions", payload)
                 result = json.loads(body)
                 return result["choices"][0]["message"]["content"]
 
@@ -286,6 +355,7 @@ class ChatMixin:
                 consent_callback=on_consent,
                 state_callback=on_state,
                 initial_history=request_messages[:-1],
+                system_prompt=system_prompt,
                 max_steps=3,
             )
             return res.output

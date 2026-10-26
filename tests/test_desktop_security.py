@@ -213,7 +213,9 @@ class DesktopSecurityTests(unittest.TestCase):
 
         self.assertFalse(window.busy)
         self.assertEqual(chat_requests[0]["model"], "mark")
-        self.assertEqual(chat_requests[0]["messages"][0]["content"],
+        self.assertEqual(chat_requests[0]["messages"][0]["role"], "system")
+        self.assertIn("O teu nome é MARK", chat_requests[0]["messages"][0]["content"])
+        self.assertEqual(chat_requests[0]["messages"][1]["content"],
                          [{"type": "text", "text": "Olá, MARK"}])
         rendered = self.visible_text(window)
         self.assertIn("Resposta de teste", rendered)

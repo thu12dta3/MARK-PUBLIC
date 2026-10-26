@@ -29,6 +29,6 @@ Arquivo ativo: `~/.config/mark/config.json`, criado na migração com permissõe
 
 Rode `MARK --check` para verificar dependências locais, modelos, vozes, o módulo Piper, a API do Ollama e o modelo padrão selecionado. Esse diagnóstico é rápido e não ativa câmera nem microfone.
 
-Para testes modulares, use `~/MARK/scripts/test_unit.sh`, `test_ollama.sh`, `test_tts.sh`, `test_whisper.sh arquivo.wav`, `test_camera.sh` e `test_microphone.sh`. O teste integrado `test_integration.sh` consulta o roteador/Ollama e fala a resposta pelo Piper. Os testes de câmera e microfone precisam dos dispositivos correspondentes; o teste de câmera usa o stream RTSP/RTSPS configurado e remove a imagem temporária depois.
+Para testes modulares, use `scripts/test_unit.sh`, `test_ollama.sh`, `test_tts.sh`, `test_whisper.sh arquivo.wav`, `test_camera.sh` e `test_microphone.sh`. O teste integrado `test_integration.sh` consulta o roteador/Ollama e fala a resposta pelo Piper. Os testes de câmera e microfone precisam dos dispositivos correspondentes; o teste de câmera usa o stream RTSP/RTSPS configurado e remove a imagem temporária depois.
 
 Para câmeras Intelbras, o protocolo RTSP simples pode ser configurado com `scheme: "rtsp"`; confirme porta e caminho específicos do modelo. Muitos modelos usam a porta 554 e o caminho `/cam/realmonitor?channel=1&subtype=1` para o stream secundário. Mantenha usuário e senha apenas em `~/.config/mark/config.json`, com permissão `0600`.

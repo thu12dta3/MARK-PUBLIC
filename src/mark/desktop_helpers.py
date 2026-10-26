@@ -172,21 +172,57 @@ def _prepare_attachments(paths: list[Path]) -> list[dict]:
     return prepared
 
 
+def ensure_config_dir_exists(config_dir: Path | str | None = None) -> Path:
+    target_dir = Path(config_dir) if config_dir is not None else Path.home() / ".config/mark"
+    os.makedirs(target_dir, exist_ok=True)
+    try:
+        os.chmod(target_dir, 0o700)
+    except OSError:
+        pass
+    token_file = target_dir / "mobile.token"
+    if not token_file.exists():
+        try:
+            create_flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+            create_flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_CLOEXEC", 0)
+            fd = os.open(token_file, create_flags, 0o600)
+            os.close(fd)
+            try:
+                os.chmod(token_file, 0o600)
+            except OSError:
+                pass
+        except (FileExistsError, OSError):
+            pass
+    return target_dir
+
+
 def _token() -> str:
+    try:
+        ensure_config_dir_exists(TOKEN_FILE.parent)
+    except (OSError, PermissionError):
+        pass
+
     flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_CLOEXEC", 0)
-    fd = os.open(TOKEN_FILE, flags)
+    try:
+        fd = os.open(TOKEN_FILE, flags)
+    except FileNotFoundError:
+        return ""
+
     with os.fdopen(fd, "r", encoding="utf-8") as source:
         info = os.fstat(source.fileno())
         if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o077:
             raise PermissionError("A chave local do MARK não está com permissões privadas.")
         value = source.read(256).strip()
-    if not value:
-        raise ValueError("A chave local do MARK está vazia.")
     return value
 
 
 def _request(path: str, payload: dict | None = None, timeout: int = 240):
-    headers = {"Authorization": "Bearer " + _token(), "X-Mark-Client": "desktop"}
+    try:
+        token = _token()
+    except (FileNotFoundError, PermissionError):
+        token = ""
+    headers = {"X-Mark-Client": "desktop"}
+    if token:
+        headers["Authorization"] = "Bearer " + token
     data = None
     if payload is not None:
         headers["Content-Type"] = "application/json"
@@ -207,10 +243,16 @@ def _request(path: str, payload: dict | None = None, timeout: int = 240):
 def _voice_request(pcm: bytes) -> tuple[bytes, bool]:
     if not 5760 <= len(pcm) <= 960_000 or len(pcm) % 2:
         raise ValueError("A fala precisa ter entre 0,18 e 30 segundos.")
+    try:
+        token = _token()
+    except (FileNotFoundError, PermissionError):
+        token = ""
+    headers = {"X-Mark-Client": "desktop", "Content-Type": "application/octet-stream"}
+    if token:
+        headers["Authorization"] = "Bearer " + token
     request = urllib.request.Request(
         API + "/v1/voice/turn", data=pcm, method="POST",
-        headers={"Authorization": "Bearer " + _token(), "X-Mark-Client": "desktop",
-                 "Content-Type": "application/octet-stream"},
+        headers=headers,
     )
     validate_url_scheme(request)
     with urllib.request.urlopen(request, timeout=240) as response:  # nosec: B310
@@ -238,6 +280,19 @@ def _mobile_pairing() -> dict:
 
     from . import desktop as desktop_module
     from .device_auth import DeviceRegistry
+    try:
+        token = _token()
+    except (FileNotFoundError, PermissionError, OSError):
+        token = ""
+    if not token:
+        return {
+            "status": "inactive",
+            "active": False,
+            "token": None,
+            "url": None,
+            "code": None,
+            "pin": None,
+        }
     result = desktop_module.subprocess.run(["tailscale", "status", "--json"], capture_output=True, text=True, timeout=8, check=True)
     hostname = json.loads(result.stdout)["Self"]["DNSName"].rstrip(".")
     if not hostname.endswith(".ts.net"):

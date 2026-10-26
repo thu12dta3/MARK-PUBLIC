@@ -222,7 +222,8 @@ def _make_adapter_factory(provider_name: str):
 
         llm_cfg = get_llm_config()
         prof = llm_cfg.get_provider(provider_name)
-        model = cfg.get("models", {}).get("chat") or prof.model
+        profile = cfg.get("interaction_mode", "chat")
+        model = cfg.get("models", {}).get(profile) or cfg.get("models", {}).get("chat") or prof.model
         return create_llm_provider(
             provider_name,
             model=model,
@@ -249,6 +250,9 @@ PROVIDERS = {
     "vllm": _make_adapter_factory("vllm"),
     "lmstudio": _make_adapter_factory("lmstudio"),
     "local": _make_adapter_factory("local"),
+    "mark-local": _make_adapter_factory("mark-local"),
+    "mark_ai": _make_adapter_factory("mark-local"),
+    "mark": _make_adapter_factory("mark-local"),
 }
 
 

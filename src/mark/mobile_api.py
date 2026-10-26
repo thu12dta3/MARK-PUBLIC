@@ -21,9 +21,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from .cognition.integration import direct_response
+from .cognition.integration import direct_response, is_system_identity_query
 from .free_ai import try_public_answer
 from .brain import answer
+from .config.llm_config import canonical_provider_name, get_llm_config
 from .audio import transcribe_temporary
 from .memory import SharedMemory, ShortMemory
 from .core.context import CoreContext
@@ -62,6 +63,10 @@ REASONING_PROFILES = {
 def mobile_token(path: Path = TOKEN_FILE) -> str:
 
     path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    try:
+        os.chmod(path.parent, 0o700)
+    except OSError:
+        pass
     flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_CLOEXEC", 0)
     try:
         fd = os.open(path, flags)
@@ -71,6 +76,10 @@ def mobile_token(path: Path = TOKEN_FILE) -> str:
         create_flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_CLOEXEC", 0)
         with os.fdopen(os.open(path, create_flags, 0o600), "w", encoding="utf-8") as stream:
             stream.write(token + "\n")
+        try:
+            os.chmod(path, 0o600)
+        except OSError:
+            pass
         return token
     with os.fdopen(fd, "r", encoding="utf-8") as stream:
         details = os.fstat(stream.fileno())
@@ -78,7 +87,15 @@ def mobile_token(path: Path = TOKEN_FILE) -> str:
             raise PermissionError("A chave móvel precisa ser um arquivo privado do usuário (0600).")
         token = stream.read(256).strip()
     if not token:
-        raise ValueError("A chave móvel está vazia.")
+        token = secrets.token_urlsafe(32)
+        write_flags = os.O_WRONLY | os.O_TRUNC | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_CLOEXEC", 0)
+        with os.fdopen(os.open(path, write_flags, 0o600), "w", encoding="utf-8") as stream:
+            stream.write(token + "\n")
+        try:
+            os.chmod(path, 0o600)
+        except OSError:
+            pass
+        return token
     return token
 
 
@@ -163,6 +180,16 @@ def _conversation(payload: dict, cfg: dict) -> tuple[str, ShortMemory, list[str]
     attachment_context = "\n\n".join(snippets)
 
     memory = ShortMemory(int(cfg["memory"]["max_messages"]))
+    active_model_id = payload.get("active_model_id", "")
+    provider_name = payload.get("provider_name", "")
+    client_system = payload.get("system", "")
+    if (not isinstance(active_model_id, str) or len(active_model_id) > 256
+            or not isinstance(provider_name, str) or len(provider_name) > 64
+            or not isinstance(client_system, str) or len(client_system) > 20_000):
+        raise ValueError("Identidade ou instruções de sistema inválidas.")
+    memory.active_model_id = active_model_id
+    memory.provider_name = provider_name
+    memory.client_system = client_system
     pending = None
     for message in messages[:-1]:
         if not isinstance(message, dict):
@@ -183,6 +210,9 @@ class _DesktopConversationMemory(ShortMemory):
         for turn in conversation.history():
             self.add(turn["user"], turn["assistant"], turn.get("source", "desktop-chat"))
         self.shared = shared
+        self.active_model_id = getattr(conversation, "active_model_id", "")
+        self.provider_name = getattr(conversation, "provider_name", "")
+        self.client_system = getattr(conversation, "client_system", "")
 
     def recall_facts(self, *args, **kwargs):
         return self.shared.recall_facts(*args, **kwargs)
@@ -613,6 +643,15 @@ class MobileHandler(BaseHTTPRequestHandler):
                 raise ValueError("Requisição JSON inválida.")
             self._wear_origin = payload.get("mark_origin") == "wear"
             command, client_memory, images, attachment_context = _conversation(payload, self.server.cfg)
+            cloud_authorized = payload.get("cloud_authorized", False)
+            if not isinstance(cloud_authorized, bool):
+                raise ValueError("Autorização de nuvem inválida.")
+            selected_provider = canonical_provider_name(client_memory.provider_name or
+                                 self.server.cfg.get("cognition", {}).get("model_provider", "ollama"))
+            if (selected_provider not in {"ollama", "local", "vllm", "lmstudio", "mark-local"}
+                    and not cloud_authorized):
+                self._error(403, "A chamada para o provedor em nuvem exige autorização nesta solicitação.")
+                return
             core_context = _core_context(payload, self._origin())
             reasoning_level = payload.get("mark_reasoning_level", "medium")
             if not isinstance(reasoning_level, str) or reasoning_level not in REASONING_PROFILES:
@@ -630,6 +669,9 @@ class MobileHandler(BaseHTTPRequestHandler):
                         self._error(403, "Esta ação exige confirmação do dono no computador.")
                         return
             profile = "call" if payload.get("model") == "mark-call" else "chat"
+            system_prompt = client_memory.client_system
+            active_model_id = client_memory.active_model_id
+            provider_name = client_memory.provider_name
 
 
             if self._origin() == "pc":
@@ -650,11 +692,13 @@ class MobileHandler(BaseHTTPRequestHandler):
             created = int(time.time())
             if payload.get("stream") is True:
                 self._stream_answer(command, memory, request_id, created, profile, images,
-                                    attachment_context, core_context, reasoning_level)
+                                    attachment_context, core_context, reasoning_level,
+                                    system_prompt, active_model_id, provider_name)
                 return
             try:
                 reply = self._answer(command, memory, profile, images, attachment_context,
-                                     core_context, reasoning_level)
+                                     core_context, reasoning_level, system_prompt,
+                                     active_model_id, provider_name)
             except Exception as exc:
                 log.error("Falha ao responder pelo celular (%s).", type(exc).__name__)
                 self._error(502, "MARK não conseguiu responder agora.")
@@ -671,7 +715,9 @@ class MobileHandler(BaseHTTPRequestHandler):
 
     def _answer(self, command: str, memory: ShortMemory, profile: str = "chat",
                 images: list[str] | None = None, attachment_context: str = "",
-                context: CoreContext | None = None, reasoning_level: str = "medium") -> str:
+                context: CoreContext | None = None, reasoning_level: str = "medium",
+                system_prompt: str = "", active_model_id: str = "",
+                provider_name: str = "") -> str:
         action = control_command(command)
         if action in {"clear_memory", "shutdown"}:
             assert_not_llm_approved(self._origin(), action)
@@ -693,7 +739,21 @@ class MobileHandler(BaseHTTPRequestHandler):
             level = reasoning_level if reasoning_level in REASONING_PROFILES else "medium"
             selected_cfg["reasoning_level"] = level
             selected_cfg["ollama"].update(REASONING_PROFILES[level])
+        from .cognition.providers import PROVIDERS
+        selected_provider = canonical_provider_name(provider_name or selected_cfg.get("cognition", {}).get("model_provider", "ollama"))
+        if selected_provider not in PROVIDERS:
+            raise ValueError("O provedor selecionado não é compatível.")
+        provider_name = selected_provider
+        if selected_provider == "gemini" and (not active_model_id or canonical_provider_name(active_model_id) == "gemini"):
+            active_model_id = get_llm_config().get_provider("gemini").model
+        selected_cfg.setdefault("cognition", {})["model_provider"] = selected_provider
+        if active_model_id:
+            selected_cfg.setdefault("models", {})[selected_profile] = active_model_id
+            selected_cfg["ollama"]["model"] = active_model_id
         selected_session = self.server.model_sessions.get(selected_profile, self.server.model_session)
+        if (selected_provider != "ollama"
+                or getattr(selected_session, "model", selected_cfg["ollama"]["model"]) != selected_cfg["ollama"]["model"]):
+            selected_session = None
         is_awake = any(session.awake for session in self.server.model_sessions.values()) or self.server.model_session.awake
         agenda_reply = handle_agenda_command(command, self.server.agenda)
         if agenda_reply is not None:
@@ -729,12 +789,20 @@ class MobileHandler(BaseHTTPRequestHandler):
         if direct is not None:
             return direct
 
-        free_reply = try_public_answer(command, selected_cfg, origin=self._origin(),
-                                       images=images, attachment_context=attachment_context)
+        if is_system_identity_query(command):
+            model_id = active_model_id or selected_cfg.get("models", {}).get(selected_profile) or selected_cfg["ollama"].get("model")
+            if not model_id:
+                return "Não consegui determinar o identificador do modelo usado nesta resposta."
+            return f"O modelo selecionado para responder nesta conversa é `{model_id}`."
+
+        free_reply = None
+        if not active_model_id and not provider_name:
+            free_reply = try_public_answer(command, selected_cfg, origin=self._origin(),
+                                           images=images, attachment_context=attachment_context)
         if free_reply is not None:
             return free_reply
         fallback_notice = ""
-        if not selected_session.awake:
+        if selected_session is not None and not selected_session.awake:
             try:
 
 
@@ -762,15 +830,19 @@ class MobileHandler(BaseHTTPRequestHandler):
             return "Estou ouvindo."
         try:
             reply = answer(command, selected_cfg, memory, images=images,
-                           attachment_context=attachment_context, origin=self._origin(), context=context)
+                           attachment_context=attachment_context, origin=self._origin(), context=context,
+                           system_prompt=system_prompt, active_model_id=active_model_id,
+                           provider_name=provider_name)
         except Exception as exc:
             from .brain_model import EngineerModelError
-            if not use_engineer or not isinstance(exc, EngineerModelError):
+            if (not use_engineer or not isinstance(exc, EngineerModelError)
+                    or active_model_id or provider_name):
                 raise
 
 
             log.warning("Inferência Engineer falhou; fallback único para Geral.")
-            selected_session.sleep()
+            if selected_session is not None:
+                selected_session.sleep()
             fallback_notice = "O modelo especializado do Engineer falhou; respondi usando o modelo Geral.\n\n"
             selected_profile = "chat"
             selected_cfg = copy.deepcopy(self.server.model_cfgs.get("chat", self.server.cfg))
@@ -780,7 +852,9 @@ class MobileHandler(BaseHTTPRequestHandler):
             if not selected_session.awake:
                 selected_session.wake()
             reply = answer(command, selected_cfg, memory, images=images,
-                           attachment_context=attachment_context, origin=self._origin(), context=context)
+                           attachment_context=attachment_context, origin=self._origin(), context=context,
+                           system_prompt=system_prompt, active_model_id=active_model_id,
+                           provider_name=provider_name)
         return fallback_notice + reply
 
     def _origin(self) -> str:
@@ -798,13 +872,15 @@ class MobileHandler(BaseHTTPRequestHandler):
     def _stream_answer(self, command: str, memory: ShortMemory, request_id: str, created: int,
                        profile: str = "chat", images: list[str] | None = None,
                        attachment_context: str = "", context: CoreContext | None = None,
-                       reasoning_level: str = "medium") -> None:
+                       reasoning_level: str = "medium", system_prompt: str = "",
+                       active_model_id: str = "", provider_name: str = "") -> None:
         results: queue.Queue[tuple[bool, str]] = queue.Queue(maxsize=1)
 
         def compute() -> None:
             try:
                 results.put((True, self._answer(command, memory, profile, images,
-                                                attachment_context, context, reasoning_level)))
+                                                attachment_context, context, reasoning_level,
+                                                system_prompt, active_model_id, provider_name)))
             except Exception as exc:
                 log.error("Falha ao responder pelo celular (%s).", type(exc).__name__)
                 results.put((False, "MARK não conseguiu responder agora."))

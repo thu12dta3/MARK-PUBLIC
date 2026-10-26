@@ -3,7 +3,7 @@ import logging
 import threading
 from typing import Any
 
-from PyQt6.QtCore import QObject, QThread, QTimer, Qt, pyqtSignal
+from PyQt6.QtCore import QObject, QSettings, QThread, QTimer, Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -53,25 +53,25 @@ class MessageBubbleWidget(QFrame):
     def _build_ui(self) -> None:
         is_user = self.role == "user"
         self.setObjectName("userBubble" if is_user else "assistantBubble")
-        self.setMaximumWidth(840)
+        self.setMaximumWidth(680 if is_user else 760)
         self.setSizePolicy(
             QSizePolicy.Policy.Preferred if is_user else QSizePolicy.Policy.Expanding,
             QSizePolicy.Policy.Preferred,
         )
 
-        # Soft Minimal Tech: sem bordas duras, usuario com fundo sutil #2D333B e raio 8px, MARK sobre fundo #1A1D21
+        # Claude/Linear: sem bordas duras, usuario com fundo carvão #20252C e raio 8px, MARK direto sobre fundo #121417
         if is_user:
             self.setStyleSheet(
-                "background: #2D333B; border: none; border-radius: 8px; padding: 10px 14px; margin: 4px 0px 4px 48px;"
+                "background: #20252C; border: none; border-radius: 8px; padding: 8px 14px; margin: 0px 0px 0px 48px;"
             )
         else:
             self.setStyleSheet(
-                "background: #1A1D21; border: none; border-radius: 0px; padding: 10px 0px; margin: 4px 48px 4px 0px;"
+                "background: #121417; border: none; border-radius: 0px; padding: 6px 0px; margin: 0px;"
             )
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 4, 0, 4)
-        layout.setSpacing(4)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(3)
 
         # Identificacao Discreta: Remetente/hora em texto secundario fino sans-serif apenas para o usuario
         if is_user:
@@ -80,8 +80,8 @@ class MessageBubbleWidget(QFrame):
             self.who = QLabel(sender_title)
             self.who.setObjectName("messageSender")
             self.who.setStyleSheet(
-                "color: #8B949E; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; "
-                "font-size: 11px; font-weight: 500; border: none; background: transparent; padding: 0px; margin: 0px;"
+                "color: #8E95A0; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; "
+                "font-size: 10px; font-weight: 500; border: none; background: transparent; padding: 0px; margin: 0px;"
             )
             self.who.setAlignment(Qt.AlignmentFlag.AlignRight)
             layout.addWidget(self.who)
@@ -94,24 +94,39 @@ class MessageBubbleWidget(QFrame):
         self.label.setTextFormat(Qt.TextFormat.RichText)
         self.label.setWordWrap(True)
         self.label.setStyleSheet(
-            "color: #EAEAEA; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; "
+            "color: #EDEDED; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; "
             "font-size: 13px; font-weight: 400; border: none; background: transparent; "
-            "selection-background-color: #58A6FF; selection-color: #1A1D21; margin: 0px; padding: 0px;"
+            "selection-background-color: #00D8F6; selection-color: #121417; margin: 0px; padding: 0px;"
         )
         self.label.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
             | Qt.TextInteractionFlag.LinksAccessibleByMouse
             | Qt.TextInteractionFlag.LinksAccessibleByKeyboard
         )
-        self.label.setOpenExternalLinks(False)
-        if self._link_handler:
-            self.label.linkActivated.connect(self._link_handler)
+        def _handle_link(url_str: str) -> None:
+            if url_str.startswith("mark-copy://"):
+                from urllib.parse import unquote
+                code_to_copy = unquote(url_str[12:])
+                cb = QApplication.clipboard()
+                if cb:
+                    cb.setText(code_to_copy)
+                return
+            if self._link_handler:
+                self._link_handler(url_str)
+
+        self.label.linkActivated.connect(_handle_link)
 
         if is_user:
-            self.label.setAlignment(Qt.AlignmentFlag.AlignRight)
-            first_line = self.text.splitlines()[0] if self.text else ""
-            natural = self.label.fontMetrics().horizontalAdvance(first_line[:72]) + 42
-            self.setMinimumWidth(min(560, max(200, natural)))
+            self.label.setAlignment(Qt.AlignmentFlag.AlignLeft)
+            lines = self.text.splitlines() if self.text else [""]
+            longest_line = max(lines, key=lambda s: self.label.fontMetrics().horizontalAdvance(s)) if lines else ""
+            raw_advance = self.label.fontMetrics().horizontalAdvance(longest_line)
+            if len(lines) == 1 and raw_advance <= 640:
+                self.label.setWordWrap(False)
+                self.setMinimumWidth(max(96, raw_advance + 32))
+            else:
+                self.label.setWordWrap(True)
+                self.setMinimumWidth(min(700, max(160, raw_advance + 36)))
         else:
             self.label.setAlignment(Qt.AlignmentFlag.AlignLeft)
             self.label.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -119,8 +134,8 @@ class MessageBubbleWidget(QFrame):
             def context_menu(position, value=self.text, target=self.label):
                 menu = QMenu(target)
                 menu.setStyleSheet(
-                    "background: #22262B; color: #EAEAEA; font-family: Inter, sans-serif; "
-                    "border: 1px solid #30363D; border-radius: 8px; padding: 4px;"
+                    "background: #16191D; color: #EDEDED; font-family: Inter, sans-serif; "
+                    "border: 1px solid #1E2228; border-radius: 8px; padding: 4px;"
                 )
                 menu.addAction("Copiar resposta", lambda: QApplication.clipboard().setText(value))
                 menu.exec(target.mapToGlobal(position))
@@ -167,7 +182,7 @@ class ErrorCardWidget(QFrame):
                 border: 1px solid #5C2D35;
                 border-radius: 8px;
                 padding: 12px 16px;
-                margin: 4px 48px 4px 0px;
+                margin: 0px 48px 0px 0px;
             }
         """)
 
@@ -188,7 +203,7 @@ class ErrorCardWidget(QFrame):
         self.title_label.setObjectName("errorTitle")
         self.title_label.setStyleSheet(
             "color: #FF7B72; font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; "
-            "font-size: 13px; font-weight: 600; border: none; background: transparent;"
+            "font-size: 13px; font-weight: 500; border: none; background: transparent;"
         )
 
         header_layout.addWidget(self.icon_label)
@@ -201,7 +216,7 @@ class ErrorCardWidget(QFrame):
         self.body_label.setObjectName("errorBody")
         self.body_label.setWordWrap(True)
         self.body_label.setStyleSheet(
-            "color: #C9D1D9; font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; "
+            "color: #EDEDED; font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; "
             "font-size: 12px; font-weight: 400; line-height: 1.4; border: none; background: transparent;"
         )
         layout.addWidget(self.body_label)
@@ -216,9 +231,9 @@ class ErrorCardWidget(QFrame):
         self.retry_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.retry_button.setStyleSheet("""
             QPushButton#retryButton {
-                background: #2D333B;
-                color: #58A6FF;
-                border: 1px solid #30363D;
+                background: #20252C;
+                color: #00D8F6;
+                border: 1px solid #1E2228;
                 border-radius: 6px;
                 padding: 6px 14px;
                 font-family: Inter, sans-serif;
@@ -226,11 +241,11 @@ class ErrorCardWidget(QFrame):
                 font-weight: 500;
             }
             QPushButton#retryButton:hover {
-                background: #373E47;
-                border-color: #58A6FF;
+                background: #262B33;
+                border-color: #00D8F6;
             }
             QPushButton#retryButton:pressed {
-                background: #22262B;
+                background: #16191D;
             }
         """)
         self.retry_button.clicked.connect(self.retry_requested.emit)
@@ -241,9 +256,9 @@ class ErrorCardWidget(QFrame):
         self.switch_model_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.switch_model_button.setStyleSheet("""
             QPushButton#switchModelButton {
-                background: #2D333B;
-                color: #8B949E;
-                border: 1px solid #30363D;
+                background: #20252C;
+                color: #8E95A0;
+                border: 1px solid #1E2228;
                 border-radius: 6px;
                 padding: 6px 14px;
                 font-family: Inter, sans-serif;
@@ -251,12 +266,12 @@ class ErrorCardWidget(QFrame):
                 font-weight: 500;
             }
             QPushButton#switchModelButton:hover {
-                background: #373E47;
-                color: #C9D1D9;
-                border-color: #8B949E;
+                background: #262B33;
+                color: #EDEDED;
+                border-color: #8E95A0;
             }
             QPushButton#switchModelButton:pressed {
-                background: #22262B;
+                background: #16191D;
             }
         """)
         self.switch_model_button.clicked.connect(self.switch_model_requested.emit)
@@ -285,11 +300,11 @@ class ThinkingIndicatorWidget(QFrame):
     def _build_ui(self) -> None:
         self.setStyleSheet("""
             QFrame#thinkingIndicator {
-                background: #1A1D21;
+                background: #121417;
                 border: none;
                 border-radius: 0px;
                 padding: 8px 0px;
-                margin: 4px 48px 4px 0px;
+                margin: 0px 48px 0px 0px;
             }
         """)
         layout = QHBoxLayout(self)
@@ -298,12 +313,12 @@ class ThinkingIndicatorWidget(QFrame):
 
         self.dot_label = QLabel("●")
         self.dot_label.setObjectName("thinkingDot")
-        self.dot_label.setStyleSheet("color: #58A6FF; font-size: 11px; border: none; background: transparent;")
+        self.dot_label.setStyleSheet("color: #00D8F6; font-size: 11px; border: none; background: transparent;")
 
         self.text_label = QLabel("MARK está pensando...")
         self.text_label.setObjectName("thinkingText")
         self.text_label.setStyleSheet(
-            "color: #8B949E; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; "
+            "color: #8E95A0; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; "
             "font-size: 13px; font-weight: 400; border: none; background: transparent;"
         )
 
@@ -338,15 +353,15 @@ class ChatWidget(QWidget):
         self.setObjectName("chatContent")
         self._thinking_widget: ThinkingIndicatorWidget | None = None
         self.chat_layout = QVBoxLayout(self)
-        self.chat_layout.setContentsMargins(16, 20, 16, 20)
-        self.chat_layout.setSpacing(20)
+        self.chat_layout.setContentsMargins(16, 16, 16, 16)
+        self.chat_layout.setSpacing(ThemeManager.TOKENS.CHAT_MESSAGE_SPACING)
         self.setStyleSheet("""
-            QWidget { background: #1A1D21; border: none; }
+            QWidget { background: #121417; border: none; }
             QLabel, QTextEdit, QTextBrowser {
                 border: none;
                 background: transparent;
-                selection-background-color: #58A6FF;
-                selection-color: #1A1D21;
+                selection-background-color: #00D8F6;
+                selection-color: #121417;
             }
         """)
 
@@ -359,6 +374,7 @@ class ChatWidget(QWidget):
     ) -> MessageBubbleWidget:
         row = QHBoxLayout()
         row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(0)
         bubble = MessageBubbleWidget(
             text=text,
             role=role,
@@ -371,6 +387,7 @@ class ChatWidget(QWidget):
         if role == "assistant":
             row.addStretch(1)
         wrapper = QWidget()
+        wrapper.setStyleSheet("background: transparent; border: none; margin: 0px; padding: 0px;")
         wrapper.setLayout(row)
         self.chat_layout.addWidget(wrapper)
         return bubble
@@ -422,13 +439,18 @@ class ModelDiscoveryWorker(QThread):
 class ProviderSelectorWidget(QComboBox):
     """Seletor de modelos e provedores de IA com deteccao dinamica em tempo real."""
 
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(self, parent: QWidget | None = None, settings: QSettings | None = None) -> None:
         super().__init__(parent)
         self.setObjectName("modelSelector")
+        self.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+        self.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Fixed)
+        if self.view() is not None:
+            self.view().setTextElideMode(Qt.TextElideMode.ElideNone)
         self._badge_widget: QLabel | None = None
         self._models_meta: list[dict[str, Any]] = []
         self._config: LLMConfig | None = None
         self._worker: ModelDiscoveryWorker | None = None
+        self._settings = settings or QSettings("Bannaman6655 Productions", "MARK")
         self.currentIndexChanged.connect(self._on_index_changed)
 
     def set_badge_widget(self, badge: QLabel) -> None:
@@ -491,28 +513,29 @@ class ProviderSelectorWidget(QComboBox):
         self._apply_discovered_models(ollama_models, cloud_provs)
 
     def _format_local_model_name(self, tag: str) -> str:
-        """Formata o nome de exibicao amigavel de um modelo Ollama baixado."""
+        """Formata o nome de exibicao amigavel de um modelo Ollama baixado garantindo o nome completo."""
         lower = tag.lower()
-        clean = tag.split("/")[-1]
         if "qwen2.5-coder-32b" in lower:
-            return "Qwen 2.5 Coder 32B (Ollama Local)"
+            return f"Qwen 2.5 Coder 32B ({tag})"
         if "qwen2.5-coder-7b" in lower or ("qwen2.5-coder" in lower and "7b" in lower):
-            return "Qwen 2.5 Coder 7B (Ollama Local)"
+            return f"Qwen 2.5 Coder 7B ({tag})"
         if "qwen2.5-coder" in lower:
-            return f"Qwen 2.5 Coder ({clean}) (Ollama Local)"
+            return f"Qwen 2.5 Coder ({tag})"
         if "qwen3-vl" in lower:
-            return f"Qwen3 VL ({clean}) (Ollama Local)"
+            return f"Qwen3 VL ({tag})"
         if "llama-3.3" in lower:
-            return "Llama 3.3 (Ollama Local)"
+            return f"Llama 3.3 ({tag})"
         if "llama3" in lower:
-            return f"Llama 3 ({clean}) (Ollama Local)"
+            return f"Llama 3 ({tag})"
         if "deepseek" in lower:
-            return f"DeepSeek ({clean}) (Ollama Local)"
-        return f"{tag} (Ollama Local)"
+            return f"DeepSeek ({tag})"
+        return tag
 
     def _format_cloud_model_name(self, provider: str, model_id: str) -> str:
         """Formata o nome exato do modelo de nuvem configurado."""
         mid_lower = model_id.lower()
+        if provider.strip().lower() in {"gemini", "google"}:
+            return model_id
         if "claude-3-5-sonnet" in mid_lower or "claude-3.5-sonnet" in mid_lower:
             return "Claude 3.5 Sonnet"
         if "gpt-4o" in mid_lower:
@@ -535,6 +558,12 @@ class ProviderSelectorWidget(QComboBox):
         self.blockSignals(True)
         prev_data = self.currentData()
         prev_text = self.currentText()
+        prev_meta = (
+            self._models_meta[self.currentIndex()]
+            if 0 <= self.currentIndex() < len(self._models_meta)
+            else None
+        )
+        saved_data = self._settings.value("chat/selected_model")
         self.clear()
         self._models_meta = []
 
@@ -613,11 +642,21 @@ class ProviderSelectorWidget(QComboBox):
                 "enabled": False,
             })
 
-        # Restaura selecao anterior se ainda valida, ou seleciona o primeiro habilitado
+        # Restaura a selecao da sessao atual ou a ultima escolha salva.
         restored = False
-        if prev_data is not None:
+        preferred_key = self._selection_key(prev_meta) if prev_meta else saved_data
+        if preferred_key is not None:
             for i, meta in enumerate(self._models_meta):
-                if meta.get("enabled", True) and (meta.get("data") == prev_data or meta.get("name") == prev_text):
+                if meta.get("enabled", True) and self._selection_key(meta) == preferred_key:
+                    self.setCurrentIndex(i)
+                    restored = True
+                    break
+
+        if not restored and prev_data is not None:
+            for i, meta in enumerate(self._models_meta):
+                if meta.get("enabled", True) and (
+                    meta.get("data") == prev_data or meta.get("name") == prev_text
+                ):
                     self.setCurrentIndex(i)
                     restored = True
                     break
@@ -633,10 +672,42 @@ class ProviderSelectorWidget(QComboBox):
             self.setCurrentIndex(0)
 
         self.blockSignals(False)
+        if saved_data is None and prev_meta is None:
+            self._persist_current_selection()
+        self.adjustSize()
+        text_w = self.fontMetrics().horizontalAdvance(self.currentText()) + 36
+        self.setMinimumWidth(max(150, min(450, max(self.sizeHint().width(), text_w))))
+        if self.view() is not None:
+            max_item_w = max(
+                (self.fontMetrics().horizontalAdvance(self.itemText(i)) + 44 for i in range(self.count())),
+                default=240,
+            )
+            self.view().setMinimumWidth(max(max_item_w, self.minimumWidth()))
         self._update_badge()
 
     def _on_index_changed(self, index: int) -> None:
+        self._persist_current_selection(index)
+        self.adjustSize()
+        text_w = self.fontMetrics().horizontalAdvance(self.currentText()) + 36
+        self.setMinimumWidth(max(150, min(450, max(self.sizeHint().width(), text_w))))
         self._update_badge()
+
+    def _persist_current_selection(self, index: int | None = None) -> None:
+        selected_index = self.currentIndex() if index is None else index
+        if 0 <= selected_index < len(self._models_meta):
+            meta = self._models_meta[selected_index]
+            selected = self._selection_key(meta)
+            if selected is not None:
+                self._settings.setValue("chat/selected_model", selected)
+                self._settings.sync()
+
+    @staticmethod
+    def _selection_key(meta: dict[str, Any]) -> str | None:
+        provider = meta.get("provider")
+        model_id = meta.get("id")
+        if provider and model_id and meta.get("enabled", True):
+            return f"{provider}:{model_id}"
+        return None
 
     def _update_badge(self) -> None:
         idx = self.currentIndex()
@@ -653,6 +724,8 @@ class ProviderSelectorWidget(QComboBox):
                     self._badge_widget.setText("Indisponível")
                     self._badge_widget.setToolTip("Configure modelos no Ollama ou chaves de API no cofre.")
                     self._badge_widget.setProperty("processing", "disabled")
+                    self._badge_widget.adjustSize()
+                    self._badge_widget.setMinimumWidth(self._badge_widget.sizeHint().width())
                     style = self._badge_widget.style()
                     if style:
                         style.unpolish(self._badge_widget)
@@ -664,6 +737,8 @@ class ProviderSelectorWidget(QComboBox):
                 self._badge_widget.setText(ptype)
                 self._badge_widget.setToolTip(f"Processamento {ptype} via provedor {prov.capitalize()}")
                 self._badge_widget.setProperty("processing", "local" if ptype == "Local Ollama" else "cloud")
+                self._badge_widget.adjustSize()
+                self._badge_widget.setMinimumWidth(self._badge_widget.sizeHint().width())
                 style = self._badge_widget.style()
                 if style:
                     style.unpolish(self._badge_widget)
@@ -726,59 +801,61 @@ class ActionConsentDialog(QDialog):
         self.setMinimumWidth(440)
         self.setStyleSheet("""
             QDialog {
-                background: #1A1D21;
-                color: #EAEAEA;
+                background: #16191D;
+                color: #EDEDED;
                 font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                border: 1px solid #30363D;
+                border: 1px solid #1E2228;
                 border-radius: 8px;
             }
             QLabel#dialogTitle {
-                color: #EAEAEA;
+                color: #EDEDED;
                 font-size: 14px;
-                font-weight: 600;
+                font-weight: 500;
             }
             QLabel#dialogPrompt {
-                color: #8B949E;
+                color: #8E95A0;
                 font-size: 13px;
+                font-weight: 400;
             }
             QLabel#toolHighlight {
-                color: #58A6FF;
+                color: #00D8F6;
                 font-family: monospace;
-                font-weight: 600;
+                font-weight: 500;
             }
             QTextEdit#argsPreview {
-                background: #0D1117;
-                color: #C9D1D9;
-                border: 1px solid #30363D;
+                background: #0B0D0F;
+                color: #EDEDED;
+                border: 1px solid #1E2228;
                 border-radius: 6px;
                 font-family: monospace;
                 font-size: 11px;
+                font-weight: 400;
                 padding: 8px;
             }
             QPushButton#authorizeBtn {
-                background: #238636;
-                color: #FFFFFF;
+                background: #3FB950;
+                color: #121417;
                 border: none;
                 border-radius: 6px;
                 padding: 8px 18px;
                 font-size: 13px;
-                font-weight: 600;
+                font-weight: 500;
             }
             QPushButton#authorizeBtn:hover {
-                background: #2EA043;
+                background: #4CC760;
             }
             QPushButton#cancelBtn {
-                background: #21262D;
-                color: #8B949E;
-                border: 1px solid #30363D;
+                background: #20252C;
+                color: #8E95A0;
+                border: 1px solid #1E2228;
                 border-radius: 6px;
                 padding: 8px 16px;
                 font-size: 13px;
                 font-weight: 500;
             }
             QPushButton#cancelBtn:hover {
-                background: #30363D;
-                color: #EAEAEA;
+                background: #262B33;
+                color: #EDEDED;
             }
         """)
 
@@ -790,7 +867,7 @@ class ActionConsentDialog(QDialog):
         title.setObjectName("dialogTitle")
         layout.addWidget(title)
 
-        prompt = QLabel(f"Permitir execução da ferramenta <b>{self.tool_name}</b>?")
+        prompt = QLabel(f"Permitir execução da ferramenta <span style='font-weight:500; color:#EDEDED;'>{self.tool_name}</span>?")
         prompt.setObjectName("dialogPrompt")
         prompt.setTextFormat(Qt.TextFormat.RichText)
         prompt.setWordWrap(True)
@@ -884,51 +961,52 @@ class GodsEyeStatusWidget(QFrame):
     def _build_ui(self) -> None:
         self.setStyleSheet("""
             QFrame#godsEyeStatusWidget {
-                background: #161B22;
-                border: 1px solid #30363D;
+                background: #16191D;
+                border: 1px solid #1E2228;
                 border-radius: 8px;
                 padding: 10px 14px;
                 margin: 4px 0px;
             }
             QLabel#godsEyeTitle {
-                color: #58A6FF;
+                color: #00D8F6;
                 font-family: Inter, sans-serif;
                 font-size: 11px;
-                font-weight: 700;
+                font-weight: 500;
                 letter-spacing: 0.8px;
             }
             QLabel#phaseBadge {
-                color: #1A1D21;
+                color: #121417;
                 font-size: 11px;
-                font-weight: 600;
+                font-weight: 500;
                 padding: 2px 8px;
                 border-radius: 4px;
             }
             QLabel#phaseBadge[phase="requested"] {
                 background: #D29922;
-                color: #1A1D21;
+                color: #121417;
             }
             QLabel#phaseBadge[phase="executing"] {
-                background: #58A6FF;
-                color: #1A1D21;
+                background: #00D8F6;
+                color: #121417;
             }
             QLabel#phaseBadge[phase="confirmed"] {
-                background: #2EA043;
-                color: #FFFFFF;
+                background: #3FB950;
+                color: #121417;
             }
             QLabel#godsEyeAction {
-                color: #EAEAEA;
+                color: #EDEDED;
                 font-size: 13px;
                 font-weight: 500;
             }
             QLabel#godsEyeStep {
-                color: #8B949E;
+                color: #8E95A0;
                 font-size: 11px;
+                font-weight: 400;
             }
             QPushButton#godsEyeCancelBtn {
-                background: #21262D;
+                background: #20252C;
                 color: #F85149;
-                border: 1px solid #30363D;
+                border: 1px solid #1E2228;
                 border-radius: 6px;
                 padding: 4px 10px;
                 font-size: 12px;
@@ -1047,33 +1125,34 @@ class CitationViewerDialog(QDialog):
         self.setMinimumSize(540, 360)
         self.setStyleSheet("""
             QDialog {
-                background-color: #1A1D21;
-                color: #EAEAEA;
+                background-color: #16191D;
+                color: #EDEDED;
                 font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             }
             QLabel {
-                color: #EAEAEA;
+                color: #EDEDED;
             }
             QPushButton {
-                background: #2D333B;
-                color: #EAEAEA;
-                border: 1px solid #30363D;
+                background: #20252C;
+                color: #EDEDED;
+                border: 1px solid #1E2228;
                 border-radius: 6px;
                 padding: 6px 16px;
                 font-size: 13px;
                 font-weight: 500;
             }
             QPushButton:hover {
-                background: #373E47;
-                border-color: #58A6FF;
+                background: #262B33;
+                border-color: #00D8F6;
             }
             QTextEdit {
-                background: #101214;
-                color: #EAEAEA;
-                border: 1px solid #30363D;
+                background: #0B0D0F;
+                color: #EDEDED;
+                border: 1px solid #1E2228;
                 border-radius: 8px;
                 padding: 12px;
                 font-size: 13px;
+                font-weight: 400;
                 line-height: 1.5;
             }
         """)
@@ -1085,34 +1164,34 @@ class CitationViewerDialog(QDialog):
         # Cabeçalho
         header_layout = QHBoxLayout()
         header_title = QLabel(f"Documento: {title or doc_id}")
-        header_title.setStyleSheet("font-size: 15px; font-weight: 600; color: #58A6FF;")
+        header_title.setStyleSheet("font-size: 15px; font-weight: 500; color: #00D8F6;")
         header_layout.addWidget(header_title)
         header_layout.addStretch()
 
         badge = QLabel("✓ Ancoragem Verificada")
         badge.setStyleSheet("""
-            background: rgba(35, 134, 54, 0.2);
+            background: rgba(63, 185, 80, 0.2);
             color: #3FB950;
-            border: 1px solid rgba(35, 134, 54, 0.4);
+            border: 1px solid rgba(63, 185, 80, 0.4);
             border-radius: 4px;
             padding: 3px 8px;
             font-size: 11px;
-            font-weight: 600;
+            font-weight: 500;
         """)
         header_layout.addWidget(badge)
         layout.addLayout(header_layout)
 
         # Metadados
-        meta_parts = [f"DocID: <code style='color:#58A6FF;'>{doc_id}</code>"]
+        meta_parts = [f"DocID: <code style='color:#00D8F6;'>{doc_id}</code>"]
         if page:
-            meta_parts.append(f"Página: <b>{page}</b>")
+            meta_parts.append(f"Página: <span style='font-weight:500;'>{page}</span>")
         meta_label = QLabel(" · ".join(meta_parts))
-        meta_label.setStyleSheet("color: #8B949E; font-size: 12px;")
+        meta_label.setStyleSheet("color: #8E95A0; font-size: 12px; font-weight: 400;")
         layout.addWidget(meta_label)
 
         # Trecho original
         section_label = QLabel("Trecho Original Ancorado:")
-        section_label.setStyleSheet("font-size: 12px; font-weight: 600; color: #8B949E; margin-top: 4px;")
+        section_label.setStyleSheet("font-size: 12px; font-weight: 500; color: #8E95A0; margin-top: 4px;")
         layout.addWidget(section_label)
 
         self.text_area = QTextEdit()

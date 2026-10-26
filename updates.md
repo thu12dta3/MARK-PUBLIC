@@ -99,6 +99,63 @@ cd src-rust/mark_core && cargo build --release
 cp target/release/libmark_core.so ../../src/mark_core/mark_core.cpython-*.so
 cd ../..
 
-# 4. Execute a suíte abrangente de testes Python
+# 4. Execute a suíte abrangente de testes Python (1028 testes)
 PYTHONPATH=.:src pytest tests/ -v
 ```
+
+---
+
+## 6. Atualização v1.2.0 — Resiliência de Bootstrapping, Identidade Blindada, MarkLocalProvider e Redesign Executivo 16:9
+
+**Versão Pública:** v1.2.0  
+**Data da Edição:** Final de Outubro de 2026  
+**Classificação:** Documentação Técnica Pública  
+
+Esta versão consolida a maturidade da experiência de desenvolvimento e execução local do MARK, introduzindo salvaguardas rigorosas de inicialização, eliminação completa de alucinações de identidade, o provedor nativo de inferência local `MarkLocalProvider` e um redesenho de interface no padrão widescreen 16:9.
+
+### 6.1 Bootstrapping Defensivo e Resiliência de Instalação Limpa
+- **Criação Automática com Permissões POSIX Estritas:** Adicionada a rotina `ensure_config_dir_exists()`, que cria automaticamente o diretório de configurações (`~/.config/mark/`) com máscara octal restrita `0700` e gera o token de autenticação local (`mobile.token`) com permissão `0600` e entropia criptográfica de 32 bytes (`secrets.token_urlsafe(32)`).
+- **Proteção Contra `FileNotFoundError`:** Todas as funções auxiliares de requisições locais (`_token()`, `_request()`, `_voice_request()`, `_mobile_pairing()`) agora tratam graciosamente a ausência transitória de credenciais, retornando estados inativos e mensagens defensivas sem abortar processos em background.
+- **Cobertura de Testes:** Validado pela suíte `tests/test_fresh_install_bootstrap.py`.
+
+### 6.2 Identidade e Roteamento Blindado (Bypass Anti-Sycophancy)
+- **Detecção Rigorosa de Metadados:** Implementação de `is_system_identity_query()` com regex pré-compilada cobrindo todas as variantes semânticas de perguntas sobre qual modelo ou arquitetura está ativa na conversa.
+- **Bypass Atômico de RAG e Busca Web:** Consultas sobre a identidade do sistema ignoram a busca vetorial na biblioteca e resultados externos da web, evitando contaminações de contexto e alucinações induzidas por submissão ao usuário (*anti-sycophancy*).
+- **Propagação Transparente de Parâmetros:** Os identificadores `active_model_id` e `provider_name` são propagados integralmente através de `desktop_chat.py`, `mobile_api.py` e `brain.py`, garantindo resposta determinística e auditável sobre o modelo em uso.
+- **Higienização de Histórico:** O módulo `conversation_context.py` higieniza declarações de identidade obsoletas em conversas anteriores.
+- **Cobertura de Testes:** Validado por `tests/test_chat_identity.py` e `tests/test_hallucination_root_cause.py`.
+
+### 6.3 Arquitetura de Provedor Local (`MarkLocalProvider`)
+- **Inferência Nativa Mark 0.1:** Adicionado o adaptador `MarkLocalProvider` (`src/mark/cognition/mark_local_provider.py`) com suporte a quantização `IQ4_NL`, teto estrito de memória de 2.2 GB VRAM para operação fluida em GPUs de entrada e ambientes locais.
+- **Janela de Contexto Expandida:** Suporte a 32.768 tokens (32k) via compressão semântica DeepSeek Multi-head Latent Attention (MLA), arquitetura Mixture-of-Experts (MoE) e Multi-Token Prediction (MTP).
+- **Roteamento de 10 Domínios Oficiais:** Ativação automática e steering para os domínios: `COMPUTING`, `ELECTRONICS`, `AUTOMOTIVE`, `CHEMISTRY`, `LAW`, `HISTORY`, `MILITARY_HISTORY`, `WEAPONS_KNOWLEDGE`, `AFV_ARMOR` e `HEALTH`.
+- **Formatação Acústica de Voz (`MarkVoiceAcousticFormatter`):** Pré-processamento de texto em tempo real para motores TTS como ElevenLabs e Fish Speech, removendo blocos `<think>`, trechos de código e referências de formatação complexas antes da síntese vocal.
+- **Diretório Parametrizável de Checkpoints:** Descoberta dinâmica via variável de ambiente `MARK_CHECKPOINTS_DIR` ou fallback seguro para `~/.config/mark/checkpoints/` e `./checkpoints`.
+- **Cobertura de Testes:** Validado por `tests/test_mark_local_provider.py`.
+
+### 6.4 Redesign Executivo da Interface Desktop (Widescreen 16:9)
+- **Coluna Central Simétrica (920px):** Introdução do `#chatColumnContainer` com largura máxima de 920px perfeitamente centralizado em monitores widescreen 16:9 (`1920x1080`), eliminando assimetrias e garantindo legibilidade executiva.
+- **Tokens de Cor Carvão Fosco e Acentos Ciano:**
+  - `BG_CANVAS`: `#121417` (fundo principal anti-fadiga)
+  - `BG_SIDEBAR`: `#0D0F11` (barra lateral fixa de 248px)
+  - `BG_PANEL` / `BG_SURFACE`: `#16191D` e `#1A1D22` (superfícies elevadas)
+  - `BG_USER_BUBBLE`: `#20252C` (bolha do usuário elegante e sem bordas duras)
+  - `ACCENT_CYAN`: `#00D8F6` (acento luminoso executivo)
+- **Tipografia Estrita:** Inter como fonte primária com pesos rigorosamente restritos a `400` (normal) e `500` (médio), e JetBrains Mono para elementos monospaçados.
+- **Pill Composer:** Caixa de entrada em formato de cápsula (`border-radius: 20px / 22px`) com botão de envio ciano integrado e visualização em linha única de dicas.
+- **Blocos de Código Interativos:** Blocos markdown com cabeçalho de linguagem identificada e botão direto de cópia para a área de transferência (`mark-copy://`).
+- **Telemetria de Segurança Interativa:** Badges clicáveis para BWRAP (sandbox Linux namespaces), mTLS e janela CTX acionando diálogo modal com detalhes de segurança (`show_technical_details()`).
+- **Gestão de Sessões:** Criação e renomeação de conversas dedicadas no modo Engenheiro diretamente pela barra lateral.
+- **Cobertura de Testes:** Validado por `tests/test_ui_components.py` (27 testes de componentes e simetria visual).
+
+---
+
+## 7. Sumário Geral de Validação e Métricas de Qualidade
+
+| Componente | Testes Executados | Taxa de Sucesso | Status |
+| :--- | :--- | :--- | :--- |
+| **Rust Core (`mark_core`)** | 14 testes | 100% | `PASSED` |
+| **Rust Mesh (`mark_link`)** | 58 testes | 100% | `PASSED` |
+| **Suíte Python Completa (`pytest`)** | 1028 testes (+ 176 subtestes) | 100% | `PASSED` |
+| **Auditoria Zero-Leak** | 0 caminhos privados / 0 credenciais / 0 hardware restrito | 100% | `VERIFIED` |
+

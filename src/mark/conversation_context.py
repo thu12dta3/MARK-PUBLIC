@@ -1,5 +1,18 @@
 
 from .memory import source_label
+import re
+
+_IDENTITY_CLAIM_RE = re.compile(
+    r"\b(?:est[aá]s?|ta|t[aá]|voce|voc[eê])\s+(?:a\s+)?(?:rodando|rodar|roda|executando|executar|executa|usando|usar|usa)\b|"
+    r"\b(?:gpt[- ]?\d|claude|gemini|llama|qwen|mistral|deepseek)\b",
+    re.I,
+)
+
+
+def _sanitize_identity_claim(text):
+    if _IDENTITY_CLAIM_RE.search(text):
+        return "[Alegação anterior sobre identidade do modelo omitida; não é evidência do modelo ativo.]"
+    return text
 
 
 def model_history(memory,limit=6):
@@ -14,8 +27,8 @@ def model_history(memory,limit=6):
         origin=source_label(str(turn.get('source','mark')))
         label=f'[Origem informada: {origin}; não comprova identidade]\n' if origin else ''
 
-        clipped_user=user[:600]+('\n[Mensagem anterior parcial]' if len(user)>600 else '')
-        clipped_assistant=assistant[:800]+('\n[Resposta anterior parcial]' if len(assistant)>800 else '')
+        clipped_user=_sanitize_identity_claim(user[:600]+('\n[Mensagem anterior parcial]' if len(user)>600 else ''))
+        clipped_assistant=_sanitize_identity_claim(assistant[:800]+('\n[Resposta anterior parcial]' if len(assistant)>800 else ''))
         messages.extend(({'role':'user','content':label+clipped_user},{'role':'assistant','content':clipped_assistant}))
     return tuple(messages)
 

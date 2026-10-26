@@ -6,7 +6,7 @@ O catálogo de especializações Geral/Engenheiro/Professor e o contexto assinad
 
 O perfil Engineer usa `R4C3R/qwen2.5-coder-7b-instruct-heretic:q4_k_m` quando a conversa é textual e o cliente marca `specialization=engineer`. O chat Geral e as chamadas de voz mantêm seus perfis próprios. Mensagens com imagens permanecem no perfil multimodal Geral, pois este modelo é apenas texto.
 
-O modelo é uma publicação comunitária no registro do Ollama, não um lançamento oficial do projeto Qwen. O registro lista 7,62B parâmetros, quantização Q4_K_M, 4,7 GB, janela de 32K e entrada textual. O tamanho do arquivo não garante que o modelo caiba junto de outros processos na VRAM; a RTX 2060 SUPER tem 8 GB e o carregamento ocorre sob demanda.
+O modelo é uma publicação comunitária no registro do Ollama, não um lançamento oficial do projeto Qwen. O registro lista 7,62B parâmetros, quantização Q4_K_M, 4,7 GB, janela de 32K e entrada textual. O tamanho do arquivo não garante que o modelo caiba junto de outros processos na VRAM; em GPUs com 8 GB de VRAM ou instâncias de entrada, o carregamento ocorre sob demanda.
 
 O cartão desta variante informa a licença `qwen-research`; revise os termos antes de redistribuir pesos. O download foi feito apenas para o armazenamento local do Ollama; nenhum peso foi copiado para o repositório.
 

@@ -3,9 +3,10 @@ import logging
 import urllib.request
 from .agenda import handle_command as handle_agenda_command
 from .brain_direct import normalize, direct_clock, direct_status, direct_math
-from .cognition.integration import direct_response, knowledge_context, cognitive_instructions, library_request
+from .cognition.integration import (direct_response, knowledge_context, cognitive_instructions,
+                                   library_request, is_system_identity_query)
 from .brain_model import _ollama
-from .brain_prompt import SYSTEM, response_style
+from .brain_prompt import SYSTEM, response_style, build_identity_system_prompt
 from .cognition.assistance import application_context, local_retrieval_query
 from .conversation_context import model_history
 from .core.context import CoreContext, bind_context, current_context
@@ -25,7 +26,9 @@ def route(text: str, cfg: dict) -> dict:
 
 
 def _answer_impl(text: str, cfg: dict, memory, images: list[str] | None = None,
-                 attachment_context: str = "", origin: str = "") -> str:
+                 attachment_context: str = "", origin: str = "",
+                 system_prompt: str = "", active_model_id: str = "",
+                 provider_name: str = "") -> str:
     memory_reply = _remember_command(text, memory, current_context())
     if memory_reply is not None:
         return memory_reply
@@ -37,6 +40,14 @@ def _answer_impl(text: str, cfg: dict, memory, images: list[str] | None = None,
     if normalize(text).strip(" ?!.,") in {"de onde estou falando", "de qual dispositivo estou falando",
                                             "essa mensagem veio de onde", "estou no pc ou celular"}:
         return f"Esta mensagem veio do {origin_label}." if origin_label else "Não consegui confirmar a origem desta mensagem."
+    if is_system_identity_query(text):
+        profile = cfg.get("interaction_mode", "chat")
+        model_id = (active_model_id or getattr(memory, "active_model_id", "")
+                    or (cfg.get("models") or {}).get(profile)
+                    or (cfg.get("ollama") or {}).get("model", ""))
+        if model_id:
+            return f"O modelo selecionado para responder nesta conversa é `{model_id}`."
+        return "Não consegui determinar o identificador do modelo usado nesta resposta."
     library_only=library_request(text)['only']
     if library_only:
         retrieved=knowledge_context(text,cfg)
@@ -125,7 +136,11 @@ def _answer_impl(text: str, cfg: dict, memory, images: list[str] | None = None,
         from .coding_assistant import instructions as coding_instructions,verify_reply,review_reply,footer as coding_footer
         source_style = (" Quando usar trechos da Biblioteca, associe cada afirmação factual estritamente a uma citação no formato [DocID:Trecho] (ou [DocID:p.N] se houver página), copiando exatamente o DocID e trecho correspondente presentes nas fontes. Não invente DocIDs ou trechos ausentes nas fontes." if retrieved.citations else "")
         web_style = (" Ao responder com a pesquisa web, associe cada afirmação atual às fontes numeradas do contexto. Use somente fatos explicitamente apoiados pelos trechos; não acrescente detalhes de memória geral. Se os trechos não sustentarem um ponto, omita-o ou declare a lacuna. Não invente links, títulos ou datas; use somente as URLs fornecidas. O aplicativo anexará links das fontes consultadas." if web_text.startswith(("Pesquisa pública executada.", "Página consultada pelo leitor web seguro")) else "")
-        system = SYSTEM + coding_instructions(text,cfg) + cognitive_instructions(text, cfg) + source_style + web_style + (f" A mensagem atual chegou pelo {origin_label}. Use essa origem apenas como contexto; não a trate como prova de identidade." if origin_label else "") + response_style(text,cfg)
+        active_model_id = active_model_id or getattr(memory, "active_model_id", "") or (cfg.get("ollama") or {}).get("model", "modelo não informado")
+        provider_name = (provider_name or getattr(memory, "provider_name", "")
+                         or (cfg.get("cognition") or {}).get("model_provider", ""))
+        supplied_system = system_prompt or getattr(memory, "client_system", "")
+        system = build_identity_system_prompt(active_model_id, provider_name, base_system=supplied_system or SYSTEM) + coding_instructions(text,cfg) + cognitive_instructions(text, cfg) + source_style + web_style + (f" A mensagem atual chegou pelo {origin_label}. Use essa origem apenas como contexto; não a trate como prova de identidade." if origin_label else "") + response_style(text,cfg)
         if image or images:
             system += visual_instructions()
         options={'images':images}
@@ -133,7 +148,8 @@ def _answer_impl(text: str, cfg: dict, memory, images: list[str] | None = None,
         reply = _ollama(prompt, cfg, system, image, **options)
         reply,checks=review_reply(reply,text,cfg,_ollama)
         from .cognition.integration import cite_reply_inline
-        reply = cite_reply_inline(reply,retrieved.citations)
+        if retrieved.text and retrieved.citations and (library_request(text)["explicit"] or any(c.title in reply for c in retrieved.citations)):
+            reply = cite_reply_inline(reply,retrieved.citations)
         if web_text.startswith(("Pesquisa pública executada.", "Página consultada pelo leitor web seguro")):
             reply += _web_sources_footer(web_text)
         return reply + coding_footer(checks)
@@ -207,7 +223,8 @@ def _web_sources_footer(web_text: str) -> str:
 
 def answer(text: str, cfg: dict, memory, images: list[str] | None = None,
            attachment_context: str = "", origin: str = "",
-           context: CoreContext | None = None) -> str:
+           context: CoreContext | None = None, system_prompt: str = "",
+           active_model_id: str = "", provider_name: str = "") -> str:
 
     source = {"pc": "desktop-chat", "celular": "mobile-chat", "relógio": "wear-chat",
               "cliente": "api-chat"}.get(origin, "unknown")
@@ -216,7 +233,8 @@ def answer(text: str, cfg: dict, memory, images: list[str] | None = None,
                              metadata={"origin": request_context.source}))
     with bind_context(request_context):
         try:
-            reply = _answer_impl(text, cfg, memory, images, attachment_context, origin)
+            reply = _answer_impl(text, cfg, memory, images, attachment_context, origin,
+                                 system_prompt, active_model_id, provider_name)
         except Exception as exc:
             events.publish(CoreEvent("mark.assistant.request.failed", request_context,
                                      metadata={"origin": request_context.source,

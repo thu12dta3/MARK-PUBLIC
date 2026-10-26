@@ -15,7 +15,7 @@ def main():
     payload=json.load(sys.stdin)
     operation=payload['operation']
     if operation=='probe':
-        host_user = os.environ.get('USER', 'thu12')
+        host_user = os.environ.get('USER', 'user')
         result={'private_home_visible': Path(f'/home/{host_user}').exists(),
                 'host_config_visible':Path('/home/mark/.config/mark/config.json').exists(),
                 'interfaces':[name for _,name in socket.if_nameindex()],

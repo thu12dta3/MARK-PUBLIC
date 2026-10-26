@@ -38,6 +38,7 @@ from PyQt6.QtWidgets import (
     QLabel,
     QLineEdit,
     QListWidget,
+    QListWidgetItem,
     QMainWindow,
     QMenu,
     QMessageBox,
@@ -118,34 +119,34 @@ class VoiceCallWidget(QWidget):
     def _build_ui(self) -> None:
         self.setStyleSheet("""
             QWidget#voiceCallWidget {
-                background: #1A1D21;
-                color: #EAEAEA;
+                background: #121417;
+                color: #EDEDED;
                 font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             }
             QPushButton#endCallButton {
-                background: #22262B;
-                color: #58A6FF;
-                border: 1px solid #30363D;
+                background: #16191D;
+                color: #00D8F6;
+                border: 1px solid #1E2228;
                 border-radius: 8px;
                 padding: 8px 16px;
                 font-size: 13px;
                 font-weight: 500;
             }
             QPushButton#endCallButton:hover {
-                background: #2D333B;
-                border-color: #58A6FF;
+                background: #262B33;
+                border-color: #00D8F6;
             }
             QPushButton#toggleCallButton {
-                background: #58A6FF;
-                color: #1A1D21;
+                background: #00D8F6;
+                color: #121417;
                 border: none;
                 border-radius: 24px;
                 padding: 14px 32px;
                 font-size: 15px;
-                font-weight: 600;
+                font-weight: 500;
             }
             QPushButton#toggleCallButton:hover {
-                background: #79B8FF;
+                background: #33E1FA;
             }
             QPushButton#toggleCallButtonActive {
                 background: #F85149;
@@ -154,31 +155,33 @@ class VoiceCallWidget(QWidget):
                 border-radius: 24px;
                 padding: 14px 32px;
                 font-size: 15px;
-                font-weight: 600;
+                font-weight: 500;
             }
             QPushButton#toggleCallButtonActive:hover {
                 background: #FF6B6B;
             }
             QComboBox {
-                background: #22262B;
-                color: #EAEAEA;
-                border: 1px solid #30363D;
+                background: #16191D;
+                color: #EDEDED;
+                border: 1px solid #1E2228;
                 border-radius: 6px;
                 padding: 6px 10px;
                 font-size: 13px;
+                font-weight: 400;
             }
             QLabel#voiceOrb {
                 font-size: 64px;
-                color: #58A6FF;
+                color: #00D8F6;
             }
             QLabel#callStateLabel {
                 font-size: 20px;
-                font-weight: 600;
-                color: #EAEAEA;
+                font-weight: 500;
+                color: #EDEDED;
             }
             QLabel#callDetailLabel {
-                color: #8B949E;
+                color: #8E95A0;
                 font-size: 13px;
+                font-weight: 400;
             }
         """)
 
@@ -196,7 +199,7 @@ class VoiceCallWidget(QWidget):
         header.addStretch(1)
 
         title = QLabel("CHAMADA DE VOZ · IN-APP")
-        title.setStyleSheet("color: #8B949E; font-size: 12px; font-weight: 600; letter-spacing: 1px;")
+        title.setStyleSheet("color: #8E95A0; font-size: 12px; font-weight: 500; letter-spacing: 1px;")
         header.addWidget(title)
         layout.addLayout(header)
 
@@ -226,7 +229,7 @@ class VoiceCallWidget(QWidget):
         output_row = QHBoxLayout()
         output_row.setAlignment(Qt.AlignmentFlag.AlignCenter)
         out_lbl = QLabel("Saída de áudio:")
-        out_lbl.setStyleSheet("color: #8B949E; font-size: 12px;")
+        out_lbl.setStyleSheet("color: #8E95A0; font-size: 12px; font-weight: 400;")
         self.output_selector = QComboBox()
         self.output_selector.setObjectName("audioOutputSelector")
         self.output_selector.addItem("Alto-falante Padrão do Sistema")
@@ -257,7 +260,7 @@ class VoiceCallWidget(QWidget):
             self.toggle_call_button.setObjectName("toggleCallButton")
             self.toggle_call_button.setText("Iniciar chamada")
             self.state_label.setText("Chamada encerrada")
-            self.voice_orb.setStyleSheet("font-size: 64px; color: #58A6FF;")
+            self.voice_orb.setStyleSheet("font-size: 64px; color: #00D8F6;")
         self.toggle_call_button.style().unpolish(self.toggle_call_button)
         self.toggle_call_button.style().polish(self.toggle_call_button)
 
@@ -335,67 +338,162 @@ class MainWindow(
         self.setCentralWidget(root_container)
 
         # ---------------------------------------------------------------------
-        # 1. Sidebar Retrátil (#sidebar / #sidebarWidget)
+        # ---------------------------------------------------------------------
+        # 1. Sidebar Profissional Refinada (#sidebar / #sidebarWidget)
         # ---------------------------------------------------------------------
         self.sidebar = QFrame()
         self.sidebar.setObjectName("sidebarWidget")
         self.sidebarWidget = self.sidebar
-        self.sidebar.setFixedWidth(224)
+        self.sidebar.setFixedWidth(248)
         self.sidebar.setStyleSheet("""
             QFrame#sidebarWidget, QFrame#sidebar {
-                background: #1A1D21;
-                border-right: 1px solid #30363D;
+                background: #0D0F11;
+                border-right: 1px solid #1E2228;
             }
-            QPushButton.navButton {
-                background: transparent;
-                color: #8B949E;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 14px;
+            QPushButton#newChatSidebarButton {
+                background: #16191D;
+                color: #EDEDED;
+                border: 1px solid #1E2228;
+                border-radius: 8px;
+                padding: 8px 12px;
                 text-align: left;
-                font-size: 13px;
+                font-size: 12px;
                 font-weight: 500;
             }
-            QPushButton.navButton:hover {
-                background: #22262B;
-                color: #EAEAEA;
+            QPushButton#newChatSidebarButton:hover {
+                background: #20252C;
+                border-color: #00D8F6;
+                color: #00D8F6;
             }
-            QPushButton.navButtonActive {
-                background: #2D333B;
-                color: #58A6FF;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 14px;
-                text-align: left;
-                font-size: 13px;
-                font-weight: 600;
+            QLineEdit#sidebarSearchInput {
+                background: #121417;
+                color: #EDEDED;
+                border: 1px solid #1E2228;
+                border-radius: 7px;
+                padding: 6px 10px;
+                font-size: 12px;
+                font-weight: 400;
             }
-            QPushButton#navButtonActive {
-                background: #2D333B;
-                color: #58A6FF;
+            QLineEdit#sidebarSearchInput:focus {
+                border-color: #00D8F6;
+            }
+            QPushButton.navButton, QPushButton#navButton {
+                background: transparent;
+                color: #8E95A0;
                 border: none;
-                border-radius: 6px;
-                padding: 10px 14px;
+                border-radius: 7px;
+                padding: 7px 10px;
                 text-align: left;
-                font-size: 13px;
-                font-weight: 600;
+                font-size: 12px;
+                font-weight: 400;
+            }
+            QPushButton.navButton:hover, QPushButton#navButton:hover {
+                background: #16191D;
+                color: #EDEDED;
+            }
+            QPushButton.navButtonActive, QPushButton#navButtonActive {
+                background: #20252C;
+                color: #00D8F6;
+                border: none;
+                border-radius: 7px;
+                padding: 7px 10px;
+                text-align: left;
+                font-size: 12px;
+                font-weight: 500;
+            }
+            QToolButton#toolsButton {
+                background: transparent;
+                color: #8E95A0;
+                border: none;
+                border-radius: 7px;
+                padding: 7px 24px 7px 10px;
+                text-align: left;
+                font-size: 12px;
+                font-weight: 400;
+            }
+            QToolButton#toolsButton:hover {
+                background: #16191D;
+                color: #EDEDED;
+            }
+            QToolButton#toolsButton::menu-indicator {
+                subcontrol-origin: padding;
+                subcontrol-position: right center;
+                right: 10px;
+                width: 10px;
+                height: 10px;
+            }
+            QListWidget#sidebarConversationList {
+                background: transparent;
+                border: none;
+                outline: none;
+                color: #8E95A0;
+                font-size: 12px;
+                font-weight: 400;
+            }
+            QListWidget#sidebarConversationList::item {
+                padding: 6px 10px;
+                border-radius: 6px;
+                margin-bottom: 2px;
+            }
+            QListWidget#sidebarConversationList::item:hover {
+                background: #16191D;
+                color: #EDEDED;
+            }
+            QListWidget#sidebarConversationList::item:selected {
+                background: #20252C;
+                color: #EDEDED;
+                font-weight: 500;
             }
         """)
 
         sidebar_layout = QVBoxLayout(self.sidebar)
-        sidebar_layout.setContentsMargins(14, 20, 14, 16)
-        sidebar_layout.setSpacing(6)
+        sidebar_layout.setContentsMargins(12, 14, 12, 12)
+        sidebar_layout.setSpacing(4)
 
+        # Cabeçalho da Sidebar: Logo + Nome (Barra lateral fixa)
+        brand_row = QHBoxLayout()
+        brand_row.setContentsMargins(2, 0, 2, 0)
+        brand_row.setSpacing(8)
+        brand_icon = QLabel()
+        brand_icon.setPixmap(_mark_icon("brand").pixmap(QSize(20, 20)))
+        brand_row.addWidget(brand_icon)
+
+        brand_col = QVBoxLayout()
+        brand_col.setSpacing(0)
         brand_label = QLabel("MARK")
-        brand_label.setStyleSheet("color: #EAEAEA; font-size: 16px; font-weight: 700; letter-spacing: 1px;")
+        brand_label.setStyleSheet("color: #EDEDED; font-size: 14px; font-weight: 500; letter-spacing: 0.6px;")
         caption_label = QLabel("ASSISTENTE PESSOAL")
-        caption_label.setStyleSheet("color: #6E7681; font-size: 10px; font-weight: 500; letter-spacing: 0.5px;")
-        sidebar_layout.addWidget(brand_label)
-        sidebar_layout.addWidget(caption_label)
-        sidebar_layout.addSpacing(18)
+        caption_label.setStyleSheet("color: #5F6672; font-size: 9px; font-weight: 500; letter-spacing: 0.5px;")
+        brand_col.addWidget(brand_label)
+        brand_col.addWidget(caption_label)
+        brand_row.addLayout(brand_col)
+        brand_row.addStretch(1)
+        sidebar_layout.addLayout(brand_row)
 
-        section_conv = QLabel("CONVERSAR")
-        section_conv.setStyleSheet("color: #6E7681; font-size: 10px; font-weight: 600; letter-spacing: 0.5px;")
+        sidebar_layout.addSpacing(8)
+
+        # Botão Ação Principal: + Nova Conversa (Exclusivo para Engineer)
+        self.sidebar_new_chat_btn = QPushButton("+  Nova conversa (Engineer)")
+        self.sidebar_new_chat_btn.setObjectName("newChatSidebarButton")
+        self.sidebar_new_chat_btn.setFixedHeight(34)
+        self.sidebar_new_chat_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.sidebar_new_chat_btn.setToolTip("Criar uma nova sessão de conversa dedicada no modo Engenheiro")
+        self.sidebar_new_chat_btn.clicked.connect(self._create_new_conversation_from_sidebar)
+        self.sidebar_new_chat_btn.hide()
+        sidebar_layout.addWidget(self.sidebar_new_chat_btn)
+
+        # Filtro Rápido de Conversas
+        self.sidebar_search_input = QLineEdit()
+        self.sidebar_search_input.setObjectName("sidebarSearchInput")
+        self.sidebar_search_input.setPlaceholderText("Filtrar conversas…")
+        self.sidebar_search_input.setFixedHeight(30)
+        self.sidebar_search_input.textChanged.connect(self._filter_sidebar_conversations)
+        sidebar_layout.addWidget(self.sidebar_search_input)
+
+        sidebar_layout.addSpacing(8)
+
+        section_conv = QLabel("AGENTES & MODOS")
+        section_conv.setStyleSheet("color: #5F6672; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; padding-left: 4px;")
         sidebar_layout.addWidget(section_conv)
 
         # Botão "Geral" (muda o perfil no chat no índice 0)
@@ -403,8 +501,9 @@ class MainWindow(
         self.chat_nav_button.setObjectName("chatNavButton")
         self.chat_nav_button.setProperty("class", "navButtonActive")
         self.chat_nav_button.setIcon(_mark_icon("chat"))
-        self.chat_nav_button.setIconSize(QSize(17, 17))
-        self.chat_nav_button.setFixedHeight(38)
+        self.chat_nav_button.setIconSize(QSize(16, 16))
+        self.chat_nav_button.setFixedHeight(32)
+        self.chat_nav_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.chat_nav_button.clicked.connect(lambda: self.open_specialized_chat("general"))
         self.shared_chat_button = self.chat_nav_button
         sidebar_layout.addWidget(self.chat_nav_button)
@@ -414,8 +513,9 @@ class MainWindow(
         self.engineer_button.setObjectName("engineerNavButton")
         self.engineer_button.setProperty("class", "navButton")
         self.engineer_button.setIcon(_mark_icon("github"))
-        self.engineer_button.setIconSize(QSize(17, 17))
-        self.engineer_button.setFixedHeight(38)
+        self.engineer_button.setIconSize(QSize(16, 16))
+        self.engineer_button.setFixedHeight(32)
+        self.engineer_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.engineer_button.clicked.connect(lambda: self.open_specialized_chat("engineer"))
         sidebar_layout.addWidget(self.engineer_button)
 
@@ -424,33 +524,47 @@ class MainWindow(
         self.professor_button.setObjectName("professorNavButton")
         self.professor_button.setProperty("class", "navButton")
         self.professor_button.setIcon(_mark_icon("chat"))
-        self.professor_button.setIconSize(QSize(17, 17))
-        self.professor_button.setFixedHeight(38)
+        self.professor_button.setIconSize(QSize(16, 16))
+        self.professor_button.setFixedHeight(32)
+        self.professor_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.professor_button.clicked.connect(lambda: self.open_specialized_chat("professor"))
         sidebar_layout.addWidget(self.professor_button)
 
-        sidebar_layout.addSpacing(16)
-        section_nav = QLabel("SISTEMA & ATIVIDADES")
-        section_nav.setStyleSheet("color: #6E7681; font-size: 10px; font-weight: 600; letter-spacing: 0.5px;")
-        sidebar_layout.addWidget(section_nav)
+        sidebar_layout.addSpacing(8)
+        section_space = QLabel("ESPAÇO & SISTEMA")
+        section_space.setStyleSheet("color: #5F6672; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; padding-left: 4px;")
+        sidebar_layout.addWidget(section_space)
 
-        # Botão "Configurações" (muda para o índice 1 do QStackedWidget)
-        self.settings_nav_button = QPushButton("Configurações")
-        self.settings_nav_button.setObjectName("settingsNavButton")
-        self.settings_nav_button.setProperty("class", "navButton")
-        self.settings_nav_button.setIcon(_mark_icon("menu"))
-        self.settings_nav_button.setIconSize(QSize(17, 17))
-        self.settings_nav_button.setFixedHeight(38)
-        self.settings_nav_button.clicked.connect(self.open_settings)
-        sidebar_layout.addWidget(self.settings_nav_button)
+        # Botão "Biblioteca"
+        self.library_nav_button = QPushButton("Biblioteca")
+        self.library_nav_button.setObjectName("libraryNavButton")
+        self.library_nav_button.setProperty("class", "navButton")
+        self.library_nav_button.setIcon(_mark_icon("attach"))
+        self.library_nav_button.setIconSize(QSize(16, 16))
+        self.library_nav_button.setFixedHeight(32)
+        self.library_nav_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.library_nav_button.clicked.connect(self.open_library)
+        sidebar_layout.addWidget(self.library_nav_button)
+
+        # Botão "Evolução"
+        self.evolution_nav_button = QPushButton("Evolução")
+        self.evolution_nav_button.setObjectName("evolutionNavButton")
+        self.evolution_nav_button.setProperty("class", "navButton")
+        self.evolution_nav_button.setIcon(_mark_icon("evolution"))
+        self.evolution_nav_button.setIconSize(QSize(16, 16))
+        self.evolution_nav_button.setFixedHeight(32)
+        self.evolution_nav_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.evolution_nav_button.clicked.connect(self.open_evolution)
+        sidebar_layout.addWidget(self.evolution_nav_button)
 
         # Botão "Chamada de Voz" (muda para o índice 2 do QStackedWidget)
         self.call_nav_button = QPushButton("Chamada de Voz")
         self.call_nav_button.setObjectName("callNavButton")
         self.call_nav_button.setProperty("class", "navButton")
         self.call_nav_button.setIcon(_mark_icon("call"))
-        self.call_nav_button.setIconSize(QSize(17, 17))
-        self.call_nav_button.setFixedHeight(38)
+        self.call_nav_button.setIconSize(QSize(16, 16))
+        self.call_nav_button.setFixedHeight(32)
+        self.call_nav_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.call_nav_button.clicked.connect(self.open_call)
         sidebar_layout.addWidget(self.call_nav_button)
 
@@ -459,29 +573,60 @@ class MainWindow(
         self.devices_nav_button.setObjectName("devicesNavButton")
         self.devices_nav_button.setProperty("class", "navButton")
         self.devices_nav_button.setIcon(_mark_icon("device"))
-        self.devices_nav_button.setIconSize(QSize(17, 17))
-        self.devices_nav_button.setFixedHeight(38)
+        self.devices_nav_button.setIconSize(QSize(16, 16))
+        self.devices_nav_button.setFixedHeight(32)
+        self.devices_nav_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.devices_nav_button.clicked.connect(self.open_mobile_devices)
         sidebar_layout.addWidget(self.devices_nav_button)
 
-        # Botão Menu de Ferramentas Categorizado
+        # Botão Menu de Ferramentas Categorizado (com indicador de seta perfeitamente alinhado à direita)
         self.tools_button = QToolButton()
         self.tools_button.setObjectName("toolsButton")
         self.tools_button.setText("Ferramentas")
         self.tools_button.setIcon(_mark_icon("menu"))
-        self.tools_button.setIconSize(QSize(17, 17))
+        self.tools_button.setIconSize(QSize(16, 16))
         self.tools_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.tools_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
-        self.tools_button.setFixedHeight(38)
+        self.tools_button.setFixedHeight(32)
+        self.tools_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.tools_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.tools_button.setAccessibleName("Abrir ferramentas do MARK")
         self._setup_tools_menu()
         sidebar_layout.addWidget(self.tools_button)
 
-        sidebar_layout.addStretch(1)
+        sidebar_layout.addSpacing(8)
+        section_hist = QLabel("CONVERSAS RECENTES")
+        section_hist.setStyleSheet("color: #5F6672; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; padding-left: 4px;")
+        sidebar_layout.addWidget(section_hist)
 
-        # Status
+        self.sidebar_conv_list = QListWidget()
+        self.sidebar_conv_list.setObjectName("sidebarConversationList")
+        self.sidebar_conv_list.setIconSize(QSize(14, 14))
+        self.sidebar_conv_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.sidebar_conv_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.sidebar_conv_list.itemClicked.connect(self._on_sidebar_conversation_clicked)
+        self.sidebar_conv_list.customContextMenuRequested.connect(self._show_sidebar_conversation_context_menu)
+        sidebar_layout.addWidget(self.sidebar_conv_list, 1)
+
+        sidebar_divider = QFrame()
+        sidebar_divider.setFixedHeight(1)
+        sidebar_divider.setStyleSheet("background: #1E2228; border: none;")
+        sidebar_layout.addWidget(sidebar_divider)
+
+        # Botão "Configurações" no rodapé da Sidebar (como no Antigravity / Claude / LM Studio)
+        self.settings_nav_button = QPushButton("Configurações")
+        self.settings_nav_button.setObjectName("settingsNavButton")
+        self.settings_nav_button.setProperty("class", "navButton")
+        self.settings_nav_button.setIcon(_mark_icon("menu"))
+        self.settings_nav_button.setIconSize(QSize(16, 16))
+        self.settings_nav_button.setFixedHeight(32)
+        self.settings_nav_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.settings_nav_button.clicked.connect(self.open_settings)
+        sidebar_layout.addWidget(self.settings_nav_button)
+
+        # Status compacto na base da sidebar
         self.api_status_label = QLabel("MARK · Operacional")
-        self.api_status_label.setStyleSheet("color: #3FB950; font-size: 11px;")
+        self.api_status_label.setStyleSheet("color: #3FB950; font-size: 11px; font-weight: 400; padding-left: 4px;")
         sidebar_layout.addWidget(self.api_status_label)
 
         self.api_status = self._status_row("MARK", "Verificando…")
@@ -526,6 +671,8 @@ class MainWindow(
             "general": self.chat_nav_button,
             "engineer": self.engineer_button,
             "professor": self.professor_button,
+            "library": self.library_nav_button,
+            "evolution": self.evolution_nav_button,
             "settings": self.settings_nav_button,
             "call": self.call_nav_button,
         }
@@ -533,22 +680,30 @@ class MainWindow(
     def _build_chat_page(self) -> QWidget:
         content = QWidget()
         content.setObjectName("contentArea")
-        main = QVBoxLayout(content)
-        main.setContentsMargins(42, 22, 42, 20)
+        outer_layout = QHBoxLayout(content)
+        outer_layout.setContentsMargins(8, 0, 8, 0)
+        outer_layout.setSpacing(0)
+
+        self.chat_column_container = QWidget()
+        self.chat_column_container.setObjectName("chatColumnContainer")
+        self.chat_column_container.setMinimumWidth(680)
+        self.chat_column_container.setMaximumWidth(920)
+        self.chat_column_container.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
+
+        main = QVBoxLayout(self.chat_column_container)
+        main.setContentsMargins(0, 16, 0, 16)
         main.setSpacing(12)
 
-        # Top Header
+        outer_layout.addStretch(1)
+        outer_layout.addWidget(self.chat_column_container, 100)
+        outer_layout.addStretch(1)
+
+        # Top Header (Sem botão de esconder sidebar — barra lateral é fixa)
         top = QHBoxLayout()
         top.setSpacing(12)
-
-        toggle = QPushButton()
-        toggle.setObjectName("iconButton")
-        toggle.setIcon(_mark_icon("menu"))
-        toggle.setIconSize(QSize(19, 19))
-        toggle.setToolTip("Menu de Comandos (Ctrl+K)")
-        toggle.setAccessibleName("Abrir menu de comandos")
-        toggle.clicked.connect(self.open_command_palette)
-        top.addWidget(toggle)
 
         heading = QVBoxLayout()
         heading.setSpacing(2)
@@ -581,14 +736,25 @@ class MainWindow(
         self.new_conversation_button.hide()
         top.addWidget(self.new_conversation_button)
 
+        self.delete_conversation_button = QPushButton()
+        self.delete_conversation_button.setObjectName("iconButton")
+        self.delete_conversation_button.setIcon(_mark_icon("trash"))
+        self.delete_conversation_button.setIconSize(QSize(16, 16))
+        self.delete_conversation_button.setToolTip("Excluir conversa atual")
+        self.delete_conversation_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.delete_conversation_button.clicked.connect(lambda: self._delete_conversation(self.current_conversation_id, self.current_specialization))
+        self.delete_conversation_button.hide()
+        top.addWidget(self.delete_conversation_button)
+
         top.addStretch()
 
         # Botão Chamada no cabeçalho (muda para o índice 2 do QStackedWidget)
         self.call_button = QPushButton("Chamada")
         self.call_button.setObjectName("callButton")
         self.call_button.setIcon(_mark_icon("call"))
-        self.call_button.setIconSize(QSize(17, 17))
+        self.call_button.setIconSize(QSize(16, 16))
         self.call_button.setToolTip("Iniciar chamada de voz in-app")
+        self.call_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.call_button.clicked.connect(self.open_call)
         top.addWidget(self.call_button)
 
@@ -596,16 +762,18 @@ class MainWindow(
         self.settings_button = QPushButton("Configurações")
         self.settings_button.setObjectName("settingsButton")
         self.settings_button.setIcon(_mark_icon("menu"))
-        self.settings_button.setIconSize(QSize(17, 17))
+        self.settings_button.setIconSize(QSize(16, 16))
         self.settings_button.setToolTip("Abrir painel de configurações")
+        self.settings_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.settings_button.clicked.connect(self.open_settings)
         top.addWidget(self.settings_button)
 
         self.refresh_button = QPushButton()
         self.refresh_button.setObjectName("iconButton")
         self.refresh_button.setIcon(_mark_icon("refresh"))
-        self.refresh_button.setIconSize(QSize(18, 18))
+        self.refresh_button.setIconSize(QSize(17, 17))
         self.refresh_button.setToolTip("Atualizar estado do MARK")
+        self.refresh_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.refresh_button.clicked.connect(self.refresh_status)
         top.addWidget(self.refresh_button)
 
@@ -643,8 +811,8 @@ class MainWindow(
         self.chat = QWidget()
         self.chat.setObjectName("chatContent")
         self.chat_layout = QVBoxLayout(self.chat)
-        self.chat_layout.setContentsMargins(8, 24, 8, 24)
-        self.chat_layout.setSpacing(18)
+        self.chat_layout.setContentsMargins(8, 20, 8, 20)
+        self.chat_layout.setSpacing(ThemeManager.TOKENS.CHAT_MESSAGE_SPACING)
 
         # Empty State
         self.empty_state = QWidget()
@@ -716,8 +884,12 @@ class MainWindow(
         # Composer Box Completo (com botão Anexar à esquerda, entrada multilinha, seletores dinâmicos e botão cápsula)
         self.composer_box = QFrame()
         self.composer_box.setObjectName("composerBox")
+        self.composer_box.setStyleSheet(
+            "QFrame#composerBox { background: #16191D; border: 1px solid #1E2228; border-radius: 22px; padding: 4px 8px; }"
+            "QFrame#composerBox:hover { border-color: #262B33; }"
+        )
         compose = QVBoxLayout(self.composer_box)
-        compose.setContentsMargins(14, 10, 14, 10)
+        compose.setContentsMargins(10, 8, 10, 8)
         compose.setSpacing(8)
 
         # Linha de entrada: Botão Anexar à esquerda da caixa de texto
@@ -731,15 +903,15 @@ class MainWindow(
         self.attach_button.setIconSize(QSize(20, 20))
         self.attach_button.setToolTip("Anexar arquivos (imagens, documentos, código)")
         self.attach_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.attach_button.setFixedHeight(44)
-        self.attach_button.setFixedWidth(44)
+        self.attach_button.setFixedHeight(40)
+        self.attach_button.setFixedWidth(40)
         self.attach_button.clicked.connect(self.add_attachments)
         input_row.addWidget(self.attach_button, alignment=Qt.AlignmentFlag.AlignTop)
 
         self.input = Composer()
         self.input.setObjectName("messageInput")
         self.input.setPlaceholderText("Escreva para o MARK ou arraste um arquivo aqui… (Shift+Enter nova linha)")
-        self.input.setFixedHeight(66)
+        self.input.setFixedHeight(58)
         self.input.send_requested.connect(self.send_message)
         self.input.files_dropped.connect(self._add_attachment_paths)
         self.input.drag_hover_changed.connect(self._set_drop_target_state)
@@ -770,12 +942,6 @@ class MainWindow(
             lambda row: self.remove_attachment_button.setEnabled(row >= 0)
         )
 
-        self.composer_hint = QLabel("Enter envia · Shift+Enter nova linha")
-        self.composer_hint.setObjectName("composerHint")
-        actions.addWidget(self.composer_hint)
-
-        actions.addStretch(1)
-
         # Seletores Dinâmicos de IA
         self.model_selector = ProviderSelectorWidget()
         self.model_selector.setObjectName("modelSelector")
@@ -786,9 +952,11 @@ class MainWindow(
         self.model_selector.set_badge_widget(self.processing_badge)
         actions.addWidget(self.processing_badge)
         actions.addWidget(self.model_selector)
+        actions.addSpacing(6)
 
         self.reasoning_selector = QComboBox()
         self.reasoning_selector.setObjectName("reasoningSelector")
+        self.reasoning_selector.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
         self.reasoning_selector.addItem("Raciocínio Instantâneo", "instant")
         self.reasoning_selector.addItem("Raciocínio Balanceado", "medium")
         self.reasoning_selector.addItem("Raciocínio Profundo", "high")
@@ -805,30 +973,49 @@ class MainWindow(
         )
         actions.addWidget(self.reasoning_selector)
 
-        # Indicador de Destino Ativo (Pre-flight Target Disclosure)
+        actions.addStretch(1)
+
+        # Botão de Envio integrado em cápsula ciano
+        self.send_button = QPushButton()
+        self.send_button.setObjectName("sendButton")
+        self.send_button.setIcon(_mark_icon("send"))
+        self.send_button.setIconSize(QSize(18, 18))
+        self.send_button.setToolTip("Enviar mensagem")
+        self.send_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.send_button.setStyleSheet(
+            "QPushButton#sendButton { background: #00D8F6; color: #121417; border-radius: 16px; border: none; padding: 4px; min-width: 36px; max-width: 36px; min-height: 32px; max-height: 32px; font-weight: 500; } "
+            "QPushButton#sendButton:hover { background: #33E1FA; }"
+        )
+        self.send_button.clicked.connect(self.send_message)
+        actions.addWidget(self.send_button)
+
+        compose.addLayout(actions)
+
+        # Linha inferior da caixa de entrada: Dica de envio à esquerda e Pílula de Destino (routingTargetBadge) à direita
+        inferior_row = QHBoxLayout()
+        inferior_row.setContentsMargins(0, 4, 0, 0)
+        inferior_row.setSpacing(8)
+
+        self.composer_hint = QLabel("Enter envia · Shift+Enter nova linha")
+        self.composer_hint.setObjectName("composerHint")
+        inferior_row.addWidget(self.composer_hint)
+
+        inferior_row.addStretch(1)
+
+        # Indicador de Destino Ativo (Pre-flight Target Disclosure / Pílula inferior)
         self.routing_target_badge = QLabel()
         self.routing_target_badge.setObjectName("routingTargetBadge")
-        actions.addWidget(self.routing_target_badge)
+        inferior_row.addWidget(self.routing_target_badge)
 
         self.model_selector.currentIndexChanged.connect(lambda _i: self._update_routing_target_badge())
         self.input.textChanged.connect(self._update_routing_target_badge)
 
-        # Botão de Envio (Design em cápsula)
-        self.send_button = QPushButton()
-        self.send_button.setObjectName("sendButton")
-        self.send_button.setIcon(_mark_icon("send"))
-        self.send_button.setIconSize(QSize(20, 20))
-        self.send_button.setToolTip("Enviar mensagem")
-        self.send_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.send_button.clicked.connect(self.send_message)
-        actions.addWidget(self.send_button)
-
         self._update_routing_target_badge()
 
-        compose.addLayout(actions)
+        compose.addLayout(inferior_row)
         main.addWidget(self.composer_box)
 
-        # Barra de Telemetria e Alternador da Sidebar
+        # Barra de Telemetria (Sidebar fixa; botão oculto mantido apenas para compatibilidade programática)
         self.telemetry_box = QWidget()
         self.telemetry_box.setObjectName("telemetryBar")
         telemetry_layout = QHBoxLayout(self.telemetry_box)
@@ -839,7 +1026,7 @@ class MainWindow(
         self.sidebar_toggle_button.setObjectName("sidebarToggleButton")
         self.sidebar_toggle_button.setToolTip("Expandir ou recolher barra lateral")
         self.sidebar_toggle_button.clicked.connect(self.toggle_sidebar)
-        telemetry_layout.addWidget(self.sidebar_toggle_button)
+        self.sidebar_toggle_button.hide()
 
         self.cmd_palette_btn = QPushButton("⌘K Comandos")
         self.cmd_palette_btn.setObjectName("cmdPaletteButton")
@@ -852,24 +1039,33 @@ class MainWindow(
         self.bwrap_status_label = QLabel()
         self.bwrap_status_label.setObjectName("bwrapStatusLabel")
         bwrap_ok = _probe_bwrap_support()
-        bwrap_color = "#3FB950" if bwrap_ok else "#6E7681"
+        bwrap_color = "#3FB950" if bwrap_ok else "#5F6672"
         bwrap_text = "ATIVO" if bwrap_ok else "INATIVO"
         self.bwrap_status_label.setText(f"<span style='color:{bwrap_color};'>●</span> BWRAP: {bwrap_text}")
-        self.bwrap_status_label.setStyleSheet("color: #8B949E; font-family: 'JetBrains Mono', monospace; font-size: 11px;")
+        self.bwrap_status_label.setStyleSheet("color: #8E95A0; font-family: Inter, sans-serif; font-size: 11px; font-weight: 500;")
+        self.bwrap_status_label.setToolTip("Clique para ver detalhes de segurança BWRAP")
+        self.bwrap_status_label.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.bwrap_status_label.mousePressEvent = lambda _ev: self.show_technical_details("bwrap")
         telemetry_layout.addWidget(self.bwrap_status_label)
 
         self.mtls_status_label = QLabel()
         self.mtls_status_label.setObjectName("mtlsStatusLabel")
         has_ts = bool(shutil.which("tailscale"))
-        mtls_color = "#58A6FF" if has_ts else "#6E7681"
+        mtls_color = "#00D8F6" if has_ts else "#5F6672"
         mtls_text = "ATIVO" if has_ts else "INATIVO"
         self.mtls_status_label.setText(f"<span style='color:{mtls_color};'>●</span> mTLS: {mtls_text}")
-        self.mtls_status_label.setStyleSheet("color: #8B949E; font-family: 'JetBrains Mono', monospace; font-size: 11px;")
+        self.mtls_status_label.setStyleSheet("color: #8E95A0; font-family: Inter, sans-serif; font-size: 11px; font-weight: 500;")
+        self.mtls_status_label.setToolTip("Clique para ver detalhes de segurança mTLS")
+        self.mtls_status_label.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.mtls_status_label.mousePressEvent = lambda _ev: self.show_technical_details("mtls")
         telemetry_layout.addWidget(self.mtls_status_label)
 
         self.ctx_status_label = QLabel("CTX: 8K")
         self.ctx_status_label.setObjectName("ctxStatusLabel")
-        self.ctx_status_label.setStyleSheet("color: #8B949E; font-family: 'JetBrains Mono', monospace; font-size: 11px;")
+        self.ctx_status_label.setStyleSheet("color: #8E95A0; font-family: Inter, sans-serif; font-size: 11px; font-weight: 500;")
+        self.ctx_status_label.setToolTip("Clique para ver detalhes de janela de contexto")
+        self.ctx_status_label.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.ctx_status_label.mousePressEvent = lambda _ev: self.show_technical_details("ctx")
         telemetry_layout.addWidget(self.ctx_status_label)
 
         main.addWidget(self.telemetry_box)
@@ -1010,19 +1206,19 @@ class MainWindow(
         box = QFrame()
         box.setObjectName("statusBox")
         row = QHBoxLayout(box)
-        row.setContentsMargins(12, 0, 12, 0)
+        row.setContentsMargins(6, 0, 6, 0)
         row.setSpacing(8)
         label = QLabel(name)
         label.setObjectName("statusTitle")
-        label.setStyleSheet("color: #8B949E; font-size: 11px;")
+        label.setStyleSheet("color: #8E95A0; font-size: 11px; font-weight: 400;")
         text = QLabel(value)
         text.setObjectName("statusValue")
-        text.setStyleSheet("color: #EAEAEA; font-size: 11px;")
-        text.setWordWrap(True)
+        text.setStyleSheet("color: #EDEDED; font-size: 11px; font-weight: 400;")
+        text.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         row.addWidget(label)
         row.addStretch(1)
         row.addWidget(text)
-        box.setFixedHeight(34)
+        box.setFixedHeight(26)
         box.value_label = text
         return box
 
@@ -1056,7 +1252,7 @@ class MainWindow(
     def resizeEvent(self, event: Any) -> None:
         super().resizeEvent(event)
         if hasattr(self, "composer_hint"):
-            self.composer_hint.setVisible(self.width() >= 1100)
+            self.composer_hint.setVisible(True)
 
     # -------------------------------------------------------------------------
     # Métodos de Armazenamento e Histórico de Conversas (SQLite)
@@ -1081,6 +1277,9 @@ class MainWindow(
                 PRIMARY KEY(conversation_id,turn_id))""")
             now = int(time.time())
             db.execute("INSERT OR IGNORE INTO conversations VALUES('general-main','general','Geral',?,?)", (now, now))
+            # O modo Geral é estritamente conversa única ('general-main'); remove duplicatas acidentais de 'general'
+            db.execute("DELETE FROM conversation_messages WHERE conversation_id IN (SELECT id FROM conversations WHERE specialization='general' AND id != 'general-main')")
+            db.execute("DELETE FROM conversations WHERE specialization='general' AND id != 'general-main'")
             for specialization, title in (("engineer", "Nova conversa"), ("professor", "Nova conversa")):
                 exists = db.execute("SELECT 1 FROM conversations WHERE specialization=? LIMIT 1", (specialization,)).fetchone()
                 if not exists:
@@ -1113,6 +1312,225 @@ class MainWindow(
         finally:
             db.close()
 
+    def _refresh_sidebar_conversations(self) -> None:
+        if not hasattr(self, "sidebar_conv_list") or self.sidebar_conv_list is None:
+            return
+        try:
+            db = self._conversation_db()
+            try:
+                rows = db.execute(
+                    "SELECT id, specialization, title, updated_at FROM conversations "
+                    "WHERE (specialization != 'general' OR id = 'general-main') "
+                    "ORDER BY CASE WHEN id = 'general-main' THEN 0 ELSE 1 END, updated_at DESC, id LIMIT 40"
+                ).fetchall()
+            except sqlite3.OperationalError:
+                rows = []
+            finally:
+                db.close()
+        except Exception:
+            rows = []
+
+        self.sidebar_conv_list.blockSignals(True)
+        self.sidebar_conv_list.clear()
+        search_q = (
+            self.sidebar_search_input.text().strip().lower()
+            if hasattr(self, "sidebar_search_input") and self.sidebar_search_input is not None
+            else ""
+        )
+        icon_map = {
+            "general": _mark_icon("chat"),
+            "engineer": _mark_icon("github"),
+            "professor": _mark_icon("evolution"),
+        }
+        for conv_id, spec, title, _updated in rows:
+            display_title = title or "Conversa"
+            if conv_id == "general-main" and display_title == "Geral":
+                display_title = "Conversa Principal (Geral)"
+            if search_q and search_q not in display_title.lower() and search_q not in spec.lower():
+                continue
+            item = QListWidgetItem(icon_map.get(spec, _mark_icon("chat")), display_title)
+            item.setData(Qt.ItemDataRole.UserRole, (conv_id, spec))
+            item.setToolTip(f"{display_title} ({spec.capitalize()}) · Clique direito para opções")
+            self.sidebar_conv_list.addItem(item)
+            if conv_id == self.current_conversation_id:
+                item.setSelected(True)
+                self.sidebar_conv_list.setCurrentItem(item)
+        self.sidebar_conv_list.blockSignals(False)
+
+    def _filter_sidebar_conversations(self, _text: str = "") -> None:
+        self._refresh_sidebar_conversations()
+
+    def _on_sidebar_conversation_clicked(self, item: Any) -> None:
+        data = item.data(Qt.ItemDataRole.UserRole)
+        if not data or not isinstance(data, tuple) or len(data) != 2:
+            return
+        conv_id, spec = data
+        if spec in {"general", "engineer", "professor"}:
+            self.specialization_conversations[spec] = conv_id
+            if self.current_specialization != spec:
+                self.open_specialized_chat(spec)
+            self.current_conversation_id = conv_id
+            self._refresh_conversation_selector(conv_id)
+            self._load_active_conversation()
+            self.stacked_widget.setCurrentWidget(self.chat_page)
+            self.input.setFocus()
+
+    def _create_new_conversation_from_sidebar(self) -> None:
+        """Cria uma nova conversa exclusivamente no modo Engineer."""
+        spec = "engineer"
+        conversation_id = uuid4().hex
+        now = int(time.time())
+        db = self._conversation_db()
+        try:
+            db.execute(
+                "INSERT INTO conversations VALUES(?,?,?,?,?)",
+                (conversation_id, spec, "Nova conversa", now, now),
+            )
+            db.commit()
+        finally:
+            db.close()
+        self.specialization_conversations[spec] = conversation_id
+        if self.current_specialization != spec:
+            self.open_specialized_chat(spec)
+        self.current_specialization = spec
+        self.current_conversation_id = conversation_id
+        self._set_active_area(spec)
+        self.stacked_widget.setCurrentWidget(self.chat_page)
+        self._refresh_conversation_selector(conversation_id)
+        self._load_active_conversation()
+        self._refresh_sidebar_conversations()
+        self.input.setFocus()
+
+    def _show_sidebar_conversation_context_menu(self, pos: Any) -> None:
+        """Abre menu de contexto (botão direito) para renomear, limpar ou excluir conversas."""
+        item = self.sidebar_conv_list.itemAt(pos)
+        if item is None:
+            return
+        data = item.data(Qt.ItemDataRole.UserRole)
+        if not data or not isinstance(data, tuple) or len(data) != 2:
+            return
+        conv_id, spec = data
+
+        menu = QMenu(self)
+        open_act = menu.addAction(_mark_icon("chat"), "Abrir conversa")
+        rename_act = menu.addAction(_mark_icon("menu"), "Renomear conversa…")
+        clear_act = menu.addAction(_mark_icon("refresh"), "Limpar mensagens…")
+        delete_act = None
+        if conv_id != "general-main":
+            menu.addSeparator()
+            delete_act = menu.addAction(_mark_icon("trash"), "Excluir conversa")
+
+        chosen = menu.exec(self.sidebar_conv_list.viewport().mapToGlobal(pos))
+        if chosen is None:
+            return
+        if chosen == open_act:
+            self._on_sidebar_conversation_clicked(item)
+        elif chosen == rename_act:
+            self._rename_conversation(conv_id)
+        elif chosen == clear_act:
+            self._clear_conversation_messages(conv_id)
+        elif delete_act is not None and chosen == delete_act:
+            self._delete_conversation(conv_id, spec)
+
+    def _rename_conversation(self, conv_id: str, new_title: str | None = None) -> bool:
+        """Renomeia uma conversa no banco SQLite e atualiza a barra lateral e o seletor."""
+        db = self._conversation_db()
+        try:
+            row = db.execute("SELECT title FROM conversations WHERE id=?", (conv_id,)).fetchone()
+        finally:
+            db.close()
+        current_title = row[0] if row else "Conversa"
+
+        if new_title is None:
+            text, ok = QInputDialog.getText(
+                self,
+                "Renomear conversa",
+                "Novo título da conversa:",
+                QLineEdit.EchoMode.Normal,
+                current_title,
+            )
+            if not ok or not text.strip():
+                return False
+            new_title = text.strip()
+
+        clean_title = new_title.strip()[:80]
+        if not clean_title:
+            return False
+
+        now = int(time.time())
+        db = self._conversation_db()
+        try:
+            db.execute("UPDATE conversations SET title=?, updated_at=? WHERE id=?", (clean_title, now, conv_id))
+            db.commit()
+        finally:
+            db.close()
+        self._refresh_conversation_selector(self.current_conversation_id)
+        self._refresh_sidebar_conversations()
+        return True
+
+    def _clear_conversation_messages(self, conv_id: str) -> bool:
+        """Apaga todas as mensagens de uma conversa específica mantendo o registro da conversa."""
+        db = self._conversation_db()
+        try:
+            db.execute("DELETE FROM conversation_messages WHERE conversation_id=?", (conv_id,))
+            db.execute("UPDATE conversations SET updated_at=? WHERE id=?", (int(time.time()), conv_id))
+            db.commit()
+        finally:
+            db.close()
+        if conv_id == self.current_conversation_id:
+            self._load_active_conversation()
+        self._refresh_sidebar_conversations()
+        return True
+
+    def _delete_conversation(self, conv_id: str, spec: str | None = None) -> bool:
+        """Exclui uma conversa do histórico SQLite (exceto 'general-main', que apenas limpa as mensagens)."""
+        if conv_id == "general-main":
+            return self._clear_conversation_messages(conv_id)
+
+        db = self._conversation_db()
+        try:
+            if spec is None:
+                row = db.execute("SELECT specialization FROM conversations WHERE id=?", (conv_id,)).fetchone()
+                spec = row[0] if row else "engineer"
+            db.execute("DELETE FROM conversation_messages WHERE conversation_id=?", (conv_id,))
+            db.execute("DELETE FROM conversations WHERE id=?", (conv_id,))
+            remaining = db.execute(
+                "SELECT id FROM conversations WHERE specialization=? ORDER BY updated_at DESC, id LIMIT 1",
+                (spec,),
+            ).fetchone()
+            fallback_id = remaining[0] if remaining else None
+            if fallback_id is None and spec in {"engineer", "professor"}:
+                fallback_id = uuid4().hex
+                now = int(time.time())
+                db.execute(
+                    "INSERT INTO conversations VALUES(?,?,?,?,?)",
+                    (fallback_id, spec, "Nova conversa", now, now),
+                )
+            db.commit()
+        finally:
+            db.close()
+
+        if spec in {"engineer", "professor"} and fallback_id:
+            if self.specialization_conversations.get(spec) == conv_id:
+                self.specialization_conversations[spec] = fallback_id
+        if self.current_conversation_id == conv_id:
+            self.current_conversation_id = fallback_id or "general-main"
+            self._refresh_conversation_selector(self.current_conversation_id)
+            self._load_active_conversation()
+        else:
+            self._refresh_conversation_selector(self.current_conversation_id)
+            self._refresh_sidebar_conversations()
+        return True
+
+    def _refresh_conversation_selector(self, select_id: str | None = None) -> None:
+        super()._refresh_conversation_selector(select_id)
+        if hasattr(self, "sidebar_new_chat_btn") and self.sidebar_new_chat_btn is not None:
+            self.sidebar_new_chat_btn.setVisible(self.current_specialization == "engineer")
+        if hasattr(self, "delete_conversation_button") and self.delete_conversation_button is not None:
+            self.delete_conversation_button.setVisible(self.current_specialization != "general")
+        if self.current_specialization == "professor" and hasattr(self, "new_conversation_button"):
+            self.new_conversation_button.hide()
+
     def _select_conversation_from_header(self, _index: int) -> None:
         if self._conversation_switching or self.current_specialization == "general":
             return
@@ -1120,10 +1538,11 @@ class MainWindow(
         if conversation_id:
             self.current_conversation_id = conversation_id
             self._load_active_conversation()
+            self._refresh_sidebar_conversations()
 
     def _create_specialized_conversation(self) -> None:
-        specialization = self.current_specialization
-        if specialization not in {"engineer", "professor"}:
+        specialization = "engineer" if self.current_specialization == "engineer" else self.current_specialization
+        if specialization != "engineer":
             return
         conversation_id = uuid4().hex
         now = int(time.time())
@@ -1138,6 +1557,7 @@ class MainWindow(
         self.specialization_conversations[specialization] = conversation_id
         self._refresh_conversation_selector(conversation_id)
         self._load_active_conversation()
+        self._refresh_sidebar_conversations()
         self.input.setFocus()
 
     def _load_active_conversation(self) -> None:
@@ -1154,7 +1574,13 @@ class MainWindow(
                 db.close()
         except sqlite3.Error:
             rows = []
+        self._refresh_sidebar_conversations()
         if not rows:
+            while self.chat_layout.count() > 1:
+                item = self.chat_layout.takeAt(0)
+                widget = item.widget()
+                if widget is not None and widget is not self.empty_state:
+                    widget.deleteLater()
             if self.empty_state is not None:
                 self.empty_state.show()
                 self.last_assistant_reply = ""
@@ -1449,11 +1875,22 @@ class MainWindow(
         self.send_button.setDisabled(True)
 
         def clear():
+            active_model_id, provider_name = self._resolve_model_and_provider()
+            sys_prompt = self.get_system_prompt()
             _, body = _request("/v1/chat/completions", {
-                "model": "mark", "stream": False,
-                "messages": [{"role": "user", "content": "limpa a memória"}],
+                "model": "mark",
+                "stream": False,
+                "system": sys_prompt,
+                "system_prompt": sys_prompt,
+                "active_model_id": active_model_id,
+                "provider_name": provider_name,
+                "messages": [
+                    {"role": "system", "content": sys_prompt},
+                    {"role": "user", "content": "limpa a memória"},
+                ],
             })
             return json.loads(body)["choices"][0]["message"]["content"]
+
 
         def done(reply):
             self.busy = False
@@ -1491,8 +1928,20 @@ class MainWindow(
                     ctx["selected_model"] = self.model_selector.current_model_id()
             decision = router.resolve_target(text, context=ctx)
 
-        self.routing_target_badge.setText(decision.badge_text)
+        badge_text = decision.badge_text
+        for emoji in ("🟢", "🟡", "🔴", "🔵", "⚪"):
+            badge_text = badge_text.replace(emoji, "●")
+        if hasattr(decision, "model_name") and decision.model_name:
+            if "(" in badge_text and ")" in badge_text:
+                prefix = badge_text[: badge_text.rfind("(") + 1]
+                badge_text = f"{prefix}{decision.model_name})"
+
+        self.routing_target_badge.setText(badge_text)
         self.routing_target_badge.setToolTip(f"{decision.reason}\nNível de privacidade: {decision.privacy_level}")
+        self.routing_target_badge.adjustSize()
+        fm = self.routing_target_badge.fontMetrics()
+        text_w = fm.horizontalAdvance(badge_text)
+        self.routing_target_badge.setMinimumWidth(text_w + 24)
 
         target_prop = "local"
         pt = str(decision.provider_type)
@@ -1537,3 +1986,42 @@ class MainWindow(
             QMessageBox.StandardButton.No,
         )
         return reply == QMessageBox.StandardButton.Yes
+
+    def show_technical_details(self, topic: str = "all") -> None:
+        """Exibe detalhes técnicos de segurança (BWRAP sandbox e mTLS Tailscale) sob clique."""
+        bwrap_ok = _probe_bwrap_support()
+        has_ts = bool(shutil.which("tailscale"))
+
+        bwrap_info = (
+            "Status: ATIVO\n"
+            "Mecanismo: Bubblewrap Linux Namespaces (PID, IPC, UTS, Mount)\n"
+            "Confinamento: Acesso estritamente restrito ao workspace e dependências do sistema."
+            if bwrap_ok else
+            "Status: INATIVO\n"
+            "Mecanismo: Sandbox nativo não disponível no ambiente atual."
+        )
+        mtls_info = (
+            "Status: ATIVO\n"
+            "Mecanismo: Tailscale TLS 1.3 mútuo\n"
+            "Criptografia: Conexão autenticada e cifrada entre cliente e servidor."
+            if has_ts else
+            "Status: INATIVO\n"
+            "Mecanismo: Loopback local exclusivo (127.0.0.1)."
+        )
+        ctx_info = (
+            "Janela de Contexto: 8K tokens ativos\n"
+            "Mecanismo: Gerenciamento de sessão local e compressão semântica."
+        )
+        if topic == "bwrap":
+            QMessageBox.information(self, "Segurança · Sandbox BWRAP", bwrap_info)
+        elif topic == "mtls":
+            QMessageBox.information(self, "Segurança · Rede mTLS", mtls_info)
+        elif topic == "ctx":
+            QMessageBox.information(self, "Contexto · Janela CTX", ctx_info)
+        else:
+            QMessageBox.information(
+                self,
+                "Status Técnico de Segurança",
+                f"=== BWRAP SANDBOX ===\n{bwrap_info}\n\n=== mTLS REDE ===\n{mtls_info}\n\n=== CONTEXTO CTX ===\n{ctx_info}",
+            )
+

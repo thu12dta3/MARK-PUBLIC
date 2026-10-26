@@ -6,31 +6,35 @@ from typing import Final
 
 @dataclass(frozen=True)
 class ThemeTokens:
-    # Cores - Soft Dark (Grafite escuro e fosco, sem preto absoluto)
-    BG_CANVAS: Final[str] = "#1A1D21"       # Fundo da aplicacao
-    BG_PANEL: Final[str] = "#22262B"        # Elementos elevados (input, menus, modal)
-    BG_SURFACE: Final[str] = "#22262B"      # Superficie de elevacao
-    BG_USER_BUBBLE: Final[str] = "#2D333B"  # Mensagem do usuario suave
-    BG_FOCUS: Final[str] = "#2D333B"        # Superficie em foco/hover
+    # Cores - Charcoal Dark (Carvão escuro e fosco, inspirado em Claude/Linear)
+    BG_CANVAS: Final[str] = "#121417"       # Fundo principal da aplicação
+    BG_SIDEBAR: Final[str] = "#0D0F11"      # Sidebar um tom mais escura
+    BG_PANEL: Final[str] = "#16191D"        # Elementos elevados (input, menus, modal)
+    BG_SURFACE: Final[str] = "#1A1D22"      # Superficie de elevacao
+    BG_USER_BUBBLE: Final[str] = "#20252C"  # Mensagem do usuario discreta a direita
+    BG_FOCUS: Final[str] = "#262B33"        # Superficie em foco/hover
     
-    TEXT_PRIMARY: Final[str] = "#EAEAEA"    # Branco suave, anti-fadiga visual
-    TEXT_SECONDARY: Final[str] = "#8B949E"  # Metadados e titulos sutis
-    TEXT_MUTED: Final[str] = "#6E7681"      # Desabilitados e separadores
+    TEXT_PRIMARY: Final[str] = "#EDEDED"    # Branco suave, anti-fadiga visual
+    TEXT_SECONDARY: Final[str] = "#8E95A0"  # Metadados e titulos sutis
+    TEXT_MUTED: Final[str] = "#5F6672"      # Desabilitados e separadores
     
-    # Acentos Suaves (Linear / Claude / Arc style)
-    ACCENT_CYAN: Final[str] = "#58A6FF"     # Acento principal azul/ciano suave
-    ACCENT_BLUE: Final[str] = "#58A6FF"     # Azul suave
+    # Acentos Ciano (Linear / Claude style)
+    ACCENT_CYAN: Final[str] = "#00D8F6"     # Acento principal ciano luminoso
+    ACCENT_BLUE: Final[str] = "#00D8F6"     # Ciano / azul luminoso
     ACCENT_GREEN: Final[str] = "#3FB950"    # Verde suave (status bwrap/seguranca)
     ACCENT_RED: Final[str] = "#F85149"      # Vermelho suave
     
-    # Linhas e Separadores Sutis
-    BORDER_SUBTLE: Final[str] = "#30363D"   # Borda de separacao suave
-    BORDER_ACTIVE: Final[str] = "#58A6FF"   # Borda ativa/foco
-    SCROLLBAR_COLOR: Final[str] = "#334155" # Scrollbar suave
+    # Linhas e Separadores Sutis (quase sem bordas)
+    BORDER_SUBTLE: Final[str] = "#1E2228"   # Borda de separacao suave
+    BORDER_ACTIVE: Final[str] = "#00D8F6"   # Borda ativa/foco
+    SCROLLBAR_COLOR: Final[str] = "#252A32" # Scrollbar suave em tom carvão
     
-    # Tipografia Hibrida e Elegante
+    # Tipografia Hibrida e Estrita (Pesos 400 e 500)
     FONT_FAMILY: Final[str] = "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif"
-    FONT_FAMILY_MONO: Final[str] = "'JetBrains Mono', 'Fira Code', monospace"
+    FONT_FAMILY_MONO: Final[str] = "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace"
+
+    # Espaçamento padronizado de mensagens do chat (token único)
+    CHAT_MESSAGE_SPACING: Final[int] = 16
 
 
 class ThemeManager:
@@ -40,7 +44,7 @@ class ThemeManager:
 
     @classmethod
     def get_user_bubble_qss(cls) -> str:
-        """Estilo da mensagem do usuario: fundo suave #2D333B, border-radius 8px, sem bordas duras."""
+        """Estilo da mensagem do usuario: fundo suave #20252C, border-radius 8px, sem bordas duras."""
         t = cls.TOKENS
         return (
             "QFrame#userBubble {"
@@ -48,7 +52,7 @@ class ThemeManager:
             "  border: none;"
             "  border-radius: 8px;"
             "  padding: 10px 14px;"
-            "  margin: 4px 0px 4px 48px;"
+            "  margin: 0px 0px 0px 48px;"
             "}"
             "QFrame#userBubble QLabel#messageSender {"
             f"  color: {t.TEXT_SECONDARY};"
@@ -72,7 +76,7 @@ class ThemeManager:
 
     @classmethod
     def get_assistant_bubble_qss(cls) -> str:
-        """Estilo da mensagem do MARK: repousa sobre o fundo #1A1D21, sem caixa ou borda visivel."""
+        """Estilo da mensagem do MARK: repousa sobre o fundo #121417, sem caixa ou borda visivel."""
         t = cls.TOKENS
         return (
             "QFrame#assistantBubble {"
@@ -80,7 +84,7 @@ class ThemeManager:
             "  border: none;"
             "  border-radius: 0px;"
             "  padding: 10px 0px;"
-            "  margin: 4px 48px 4px 0px;"
+            "  margin: 0px 48px 0px 0px;"
             "}"
             "QFrame#assistantBubble QLabel#messageSender {"
             f"  color: {t.TEXT_SECONDARY};"
@@ -108,14 +112,20 @@ class ThemeManager:
         t = cls.TOKENS
         return f"""
 /* Root & Window */
-QMainWindow, #appRoot, #contentArea {{
+QMainWindow, #appRoot, #contentArea, #chatColumnContainer {{
     background: {t.BG_CANVAS};
+}}
+
+QFrame#sidebar, QFrame#sidebarWidget {{
+    background: {t.BG_SIDEBAR};
+    border-right: 1px solid {t.BORDER_SUBTLE};
 }}
 
 QWidget {{
     color: {t.TEXT_PRIMARY};
     font-family: {t.FONT_FAMILY};
     font-size: 13px;
+    font-weight: 400;
     background: transparent;
 }}
 
@@ -173,7 +183,7 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {{
     color: {t.TEXT_PRIMARY};
     font-family: {t.FONT_FAMILY};
     font-size: 15px;
-    font-weight: 600;
+    font-weight: 500;
     letter-spacing: -0.2px;
 }}
 
@@ -188,6 +198,46 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {{
     background: {t.BORDER_SUBTLE};
     border: none;
     height: 1px;
+}}
+
+/* Welcome & Empty State */
+#welcomeEyebrow {{
+    color: {t.ACCENT_CYAN};
+    font-family: {t.FONT_FAMILY};
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.8px;
+}}
+
+#welcomeTitle {{
+    color: {t.TEXT_PRIMARY};
+    font-family: {t.FONT_FAMILY};
+    font-size: 20px;
+    font-weight: 500;
+}}
+
+#welcomeHint {{
+    color: {t.TEXT_SECONDARY};
+    font-family: {t.FONT_FAMILY};
+    font-size: 13px;
+    font-weight: 400;
+}}
+
+#suggestionCard {{
+    background: {t.BG_PANEL};
+    color: {t.TEXT_PRIMARY};
+    border: 1px solid {t.BORDER_SUBTLE};
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-family: {t.FONT_FAMILY};
+    font-size: 12px;
+    font-weight: 500;
+    text-align: left;
+}}
+
+#suggestionCard:hover {{
+    background: {t.BG_FOCUS};
+    border-color: {t.ACCENT_CYAN};
 }}
 
 /* Chat & Scroll */
@@ -225,20 +275,20 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {{
     color: #FF7B72;
     font-family: {t.FONT_FAMILY};
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 500;
 }}
 
 #errorBody {{
-    color: #C9D1D9;
+    color: {t.TEXT_PRIMARY};
     font-family: {t.FONT_FAMILY};
     font-size: 12px;
     font-weight: 400;
 }}
 
 #retryButton {{
-    background: #2D333B;
-    color: #58A6FF;
-    border: 1px solid #30363D;
+    background: {t.BG_USER_BUBBLE};
+    color: {t.ACCENT_CYAN};
+    border: 1px solid {t.BORDER_SUBTLE};
     border-radius: 6px;
     padding: 6px 14px;
     font-family: {t.FONT_FAMILY};
@@ -247,14 +297,14 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {{
 }}
 
 #retryButton:hover {{
-    background: #373E47;
-    border-color: #58A6FF;
+    background: {t.BG_FOCUS};
+    border-color: {t.ACCENT_CYAN};
 }}
 
 #switchModelButton {{
-    background: #2D333B;
-    color: #8B949E;
-    border: 1px solid #30363D;
+    background: {t.BG_USER_BUBBLE};
+    color: {t.TEXT_SECONDARY};
+    border: 1px solid {t.BORDER_SUBTLE};
     border-radius: 6px;
     padding: 6px 14px;
     font-family: {t.FONT_FAMILY};
@@ -263,17 +313,18 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {{
 }}
 
 #switchModelButton:hover {{
-    background: #373E47;
-    color: #C9D1D9;
-    border-color: #8B949E;
+    background: {t.BG_FOCUS};
+    color: {t.TEXT_PRIMARY};
+    border-color: {t.TEXT_SECONDARY};
 }}
 
 #navButtonActive {{
     background: {t.BG_PANEL};
     border: 1px solid {t.BORDER_ACTIVE};
-    color: {t.TEXT_PRIMARY};
+    color: {t.ACCENT_CYAN};
     font-family: {t.FONT_FAMILY};
     font-size: 12px;
+    font-weight: 500;
     border-radius: 8px;
 }}
 
@@ -287,12 +338,12 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {{
 #composerBox {{
     background-color: {t.BG_PANEL};
     border: 1px solid {t.BORDER_SUBTLE};
-    border-radius: 12px;
-    padding: 6px;
+    border-radius: 20px;
+    padding: 6px 12px;
 }}
 
 #composerBox:hover {{
-    border-color: #444C56;
+    border-color: {t.BG_FOCUS};
 }}
 
 #messageInput {{
@@ -311,6 +362,7 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {{
     color: {t.TEXT_SECONDARY};
     font-family: {t.FONT_FAMILY};
     font-size: 11px;
+    font-weight: 400;
 }}
 
 /* Telemetria Suave */
@@ -342,17 +394,18 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {{
     font-size: 10px;
 }}
 
-#cmdPaletteButton {{
+#cmdPaletteButton, #sidebarToggleButton {{
     background: transparent;
     border: 1px solid {t.BORDER_SUBTLE};
     border-radius: 6px;
     color: {t.TEXT_SECONDARY};
     font-family: {t.FONT_FAMILY};
     font-size: 11px;
+    font-weight: 500;
     padding: 3px 8px;
 }}
 
-#cmdPaletteButton:hover {{
+#cmdPaletteButton:hover, #sidebarToggleButton:hover {{
     background: {t.BG_FOCUS};
     color: {t.ACCENT_CYAN};
     border-color: {t.ACCENT_CYAN};
@@ -387,23 +440,23 @@ QPushButton:disabled, QToolButton:disabled {{
 
 #sendButton {{
     background: {t.ACCENT_CYAN};
-    color: #FFFFFF;
+    color: {t.BG_CANVAS};
     border: none;
-    border-radius: 18px;
+    border-radius: 16px;
     padding: 0px;
-    min-width: 44px;
-    max-width: 44px;
-    min-height: 36px;
-    max-height: 36px;
+    min-width: 40px;
+    max-width: 40px;
+    min-height: 32px;
+    max-height: 32px;
     font-weight: 500;
 }}
 
 #sendButton:hover {{
-    background: #79B8FF;
+    background: #33E1FA;
 }}
 
 #sendButton:pressed {{
-    background: #388BFD;
+    background: #00B8D4;
 }}
 
 #sendButton:disabled {{
@@ -418,6 +471,7 @@ QPushButton:disabled, QToolButton:disabled {{
     border-radius: 8px;
     padding: 6px 10px;
     font-size: 12px;
+    font-weight: 500;
 }}
 
 #attachButton:hover {{
@@ -431,11 +485,11 @@ QPushButton:disabled, QToolButton:disabled {{
     background: {t.BG_CANVAS};
     color: {t.TEXT_PRIMARY};
     font-family: {t.FONT_FAMILY};
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 400;
     border: 1px solid {t.BORDER_SUBTLE};
     border-radius: 8px;
-    padding: 5px 10px;
+    padding: 4px 8px;
     min-width: 150px;
 }}
 
@@ -449,7 +503,7 @@ QPushButton:disabled, QToolButton:disabled {{
 
 #processingBadge {{
     color: {t.ACCENT_CYAN};
-    background: #262B32;
+    background: {t.BG_USER_BUBBLE};
     border: 1px solid {t.BORDER_SUBTLE};
     border-radius: 6px;
     font-family: {t.FONT_FAMILY};
@@ -466,8 +520,8 @@ QPushButton:disabled, QToolButton:disabled {{
 
 #processingBadge[processing="cloud"] {{
     color: {t.ACCENT_CYAN};
-    background: #1E293B;
-    border-color: #29384E;
+    background: #162228;
+    border-color: #1F3540;
 }}
 
 #processingBadge[processing="disabled"] {{
@@ -519,7 +573,8 @@ QPushButton:disabled, QToolButton:disabled {{
     font-weight: 400;
     border: 1px solid {t.BORDER_SUBTLE};
     border-radius: 8px;
-    padding: 5px 8px;
+    padding: 4px 8px;
+    min-width: 148px;
 }}
 
 #reasoningSelector:hover {{
@@ -529,6 +584,7 @@ QPushButton:disabled, QToolButton:disabled {{
 /* QComboBox Dropdown Menu */
 QComboBox::drop-down {{
     border: none;
+    background: transparent;
     width: 16px;
 }}
 
@@ -539,6 +595,7 @@ QComboBox QAbstractItemView {{
     color: {t.TEXT_PRIMARY};
     font-family: {t.FONT_FAMILY};
     font-size: 12px;
+    font-weight: 400;
     selection-background-color: {t.BG_FOCUS};
     selection-color: {t.ACCENT_CYAN};
     padding: 4px;
@@ -572,6 +629,7 @@ QDialog, QDialog#commandPaletteDialog {{
     color: {t.TEXT_PRIMARY};
     font-family: {t.FONT_FAMILY};
     font-size: 12px;
+    font-weight: 400;
     selection-background-color: {t.BG_FOCUS};
     selection-color: {t.ACCENT_CYAN};
 }}
@@ -590,6 +648,7 @@ QMenu::item {{
     border-radius: 6px;
     font-family: {t.FONT_FAMILY};
     font-size: 12px;
+    font-weight: 400;
 }}
 
 QMenu::item:selected {{
@@ -600,7 +659,7 @@ QMenu::item:selected {{
 QMenu::item:disabled {{
     color: {t.TEXT_SECONDARY};
     font-size: 10px;
-    font-weight: 600;
+    font-weight: 500;
     padding: 8px 12px 4px 12px;
 }}
 
@@ -608,11 +667,13 @@ QMenu::item:disabled {{
 pre {{
     font-family: {t.FONT_FAMILY_MONO};
     font-size: 12px;
+    font-weight: 400;
     color: {t.TEXT_PRIMARY};
-    background-color: #0d131f;
+    background-color: #0B0D0F;
     border: 1px solid {t.BORDER_SUBTLE};
     border-radius: 8px;
     padding: 10px;
     white-space: pre-wrap;
 }}
 """
+

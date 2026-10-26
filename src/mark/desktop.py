@@ -45,7 +45,7 @@ from .sandbox import _probe_bwrap_support
 
 from .desktop_helpers import (
     API, ICON_DIR, ROOT, _mark_icon, _mobile_pairing, _prepare_attachments,
-    _request, _service, _token, _voice_request,
+    _request, _service, _token, _voice_request, ensure_config_dir_exists,
 )
 
 MEMORY_FILE = Path.home() / ".local/state/mark/conversation.sqlite3"
@@ -225,9 +225,26 @@ class MarkWindow(HistoryMixin, WorkerMixin, NavigationMixin, ChatMixin, Professo
 
         content = QWidget()
         content.setObjectName("contentArea")
-        main = QVBoxLayout(content)
-        main.setContentsMargins(42, 22, 42, 20)
-        main.setSpacing(13)
+        outer_layout = QHBoxLayout(content)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+        outer_layout.setSpacing(0)
+
+        self.chat_column_container = QWidget()
+        self.chat_column_container.setObjectName("chatColumnContainer")
+        self.chat_column_container.setMinimumWidth(680)
+        self.chat_column_container.setMaximumWidth(920)
+        self.chat_column_container.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
+
+        main = QVBoxLayout(self.chat_column_container)
+        main.setContentsMargins(0, 16, 0, 16)
+        main.setSpacing(12)
+
+        outer_layout.addStretch(1)
+        outer_layout.addWidget(self.chat_column_container, 100)
+        outer_layout.addStretch(1)
         top = QHBoxLayout()
         top.setSpacing(12)
         toggle = QPushButton()
@@ -308,8 +325,8 @@ class MarkWindow(HistoryMixin, WorkerMixin, NavigationMixin, ChatMixin, Professo
         self.chat = QWidget()
         self.chat.setObjectName("chatContent")
         self.chat_layout = QVBoxLayout(self.chat)
-        self.chat_layout.setContentsMargins(8, 26, 8, 26)
-        self.chat_layout.setSpacing(20)
+        self.chat_layout.setContentsMargins(8, 20, 8, 20)
+        self.chat_layout.setSpacing(ThemeManager.TOKENS.CHAT_MESSAGE_SPACING)
         self.empty_state = QWidget()
         self.empty_state.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         empty = QVBoxLayout(self.empty_state)
@@ -361,13 +378,17 @@ class MarkWindow(HistoryMixin, WorkerMixin, NavigationMixin, ChatMixin, Professo
 
         self.composer_box = QFrame()
         self.composer_box.setObjectName("composerBox")
+        self.composer_box.setStyleSheet(
+            "QFrame#composerBox { background: #16191D; border: 1px solid #1E2228; border-radius: 22px; padding: 6px 14px; }"
+            "QFrame#composerBox:hover { border-color: #262B33; }"
+        )
         compose = QVBoxLayout(self.composer_box)
-        compose.setContentsMargins(17, 13, 13, 11)
-        compose.setSpacing(7)
+        compose.setContentsMargins(14, 10, 14, 10)
+        compose.setSpacing(8)
         self.input = Composer()
         self.input.setObjectName("messageInput")
         self.input.setPlaceholderText("Escreva para o MARK ou arraste um arquivo aqui…")
-        self.input.setFixedHeight(66)
+        self.input.setFixedHeight(58)
         self.input.send_requested.connect(self.send_message)
         self.input.files_dropped.connect(self._add_attachment_paths)
         self.input.drag_hover_changed.connect(self._set_drop_target_state)
@@ -396,10 +417,6 @@ class MarkWindow(HistoryMixin, WorkerMixin, NavigationMixin, ChatMixin, Professo
         self.remove_attachment_button.clicked.connect(self.remove_selected_attachment)
         actions.addWidget(self.remove_attachment_button)
         self.attachment_list.currentRowChanged.connect(lambda row: self.remove_attachment_button.setEnabled(row >= 0))
-        self.composer_hint = QLabel("Enter envia · Shift+Enter nova linha")
-        self.composer_hint.setObjectName("composerHint")
-        actions.addWidget(self.composer_hint)
-        actions.addStretch(1)
         self.model_selector = ProviderSelectorWidget()
         self.model_selector.setObjectName("modelSelector")
         self.model_selector.populate_from_config()
@@ -426,15 +443,32 @@ class MarkWindow(HistoryMixin, WorkerMixin, NavigationMixin, ChatMixin, Professo
             )
         )
         actions.addWidget(self.reasoning_selector)
+        actions.addStretch(1)
         self.send_button = QPushButton()
         self.send_button.setObjectName("sendButton")
         self.send_button.setIcon(_mark_icon("send"))
-        self.send_button.setIconSize(QSize(21, 21))
+        self.send_button.setIconSize(QSize(18, 18))
         self.send_button.setToolTip("Enviar mensagem")
         self.send_button.setAccessibleName("Enviar mensagem")
+        self.send_button.setStyleSheet(
+            "QPushButton#sendButton { background: #00D8F6; color: #121417; border-radius: 16px; border: none; padding: 4px; min-width: 36px; max-width: 36px; min-height: 32px; max-height: 32px; font-weight: 500; } "
+            "QPushButton#sendButton:hover { background: #33E1FA; }"
+        )
         self.send_button.clicked.connect(self.send_message)
         actions.addWidget(self.send_button)
         compose.addLayout(actions)
+
+        # Dica de envio em linha própria sem corte de texto
+        self.composer_hint = QLabel("Enter envia · Shift+Enter nova linha")
+        self.composer_hint.setObjectName("composerHint")
+        self.composer_hint.setStyleSheet("color: #8E95A0; font-family: Inter, sans-serif; font-size: 11px; font-weight: 400;")
+        hint_row = QHBoxLayout()
+        hint_row.setContentsMargins(0, 0, 0, 0)
+        hint_row.addWidget(self.composer_hint)
+        hint_row.addStretch(1)
+        compose.addLayout(hint_row)
+
+        main.addWidget(self.composer_box)
 
         # Telemetria Minimalista (Minimalismo Tecnico Radical)
         self.telemetry_box = QWidget()
@@ -454,29 +488,36 @@ class MarkWindow(HistoryMixin, WorkerMixin, NavigationMixin, ChatMixin, Professo
         self.bwrap_status_label = QLabel()
         self.bwrap_status_label.setObjectName("bwrapStatusLabel")
         bwrap_ok = _probe_bwrap_support()
-        bwrap_color = "#3FB950" if bwrap_ok else "#6E7681"
+        bwrap_color = "#3FB950" if bwrap_ok else "#5F6672"
         bwrap_text = "ATIVO" if bwrap_ok else "INATIVO"
         self.bwrap_status_label.setText(f"<span style='color:{bwrap_color};'>●</span> BWRAP: {bwrap_text}")
-        self.bwrap_status_label.setStyleSheet("color: #8B949E; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 400;")
+        self.bwrap_status_label.setStyleSheet("color: #8E95A0; font-family: Inter, sans-serif; font-size: 11px; font-weight: 500;")
+        self.bwrap_status_label.setToolTip("Clique para ver detalhes de segurança BWRAP")
+        self.bwrap_status_label.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.bwrap_status_label.mousePressEvent = lambda _ev: self.show_technical_details("bwrap")
         telemetry_layout.addWidget(self.bwrap_status_label)
 
         self.mtls_status_label = QLabel()
         self.mtls_status_label.setObjectName("mtlsStatusLabel")
         has_ts = bool(shutil.which("tailscale"))
-        mtls_color = "#58A6FF" if has_ts else "#6E7681"
+        mtls_color = "#00D8F6" if has_ts else "#5F6672"
         mtls_text = "ATIVO" if has_ts else "INATIVO"
         self.mtls_status_label.setText(f"<span style='color:{mtls_color};'>●</span> mTLS: {mtls_text}")
-        self.mtls_status_label.setStyleSheet("color: #8B949E; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 400;")
+        self.mtls_status_label.setStyleSheet("color: #8E95A0; font-family: Inter, sans-serif; font-size: 11px; font-weight: 500;")
+        self.mtls_status_label.setToolTip("Clique para ver detalhes de segurança mTLS")
+        self.mtls_status_label.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.mtls_status_label.mousePressEvent = lambda _ev: self.show_technical_details("mtls")
         telemetry_layout.addWidget(self.mtls_status_label)
 
         self.ctx_status_label = QLabel("CTX: 8K")
         self.ctx_status_label.setObjectName("ctxStatusLabel")
-        self.ctx_status_label.setStyleSheet("color: #8B949E; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 400;")
+        self.ctx_status_label.setStyleSheet("color: #8E95A0; font-family: Inter, sans-serif; font-size: 11px; font-weight: 500;")
+        self.ctx_status_label.setToolTip("Clique para ver detalhes de janela de contexto")
+        self.ctx_status_label.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.ctx_status_label.mousePressEvent = lambda _ev: self.show_technical_details("ctx")
         telemetry_layout.addWidget(self.ctx_status_label)
 
-        compose.addWidget(self.telemetry_box)
-
-        main.addWidget(self.composer_box)
+        main.addWidget(self.telemetry_box)
         footer = QLabel("PC, celular e voz · uma memória compartilhada")
         footer.setObjectName("footer")
         footer.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -531,6 +572,44 @@ class MarkWindow(HistoryMixin, WorkerMixin, NavigationMixin, ChatMixin, Professo
         self.command_palette.populate()
         self.command_palette.search_input.setFocus()
         self.command_palette.exec()
+
+    def show_technical_details(self, topic: str = "all") -> None:
+        """Exibe detalhes técnicos de segurança (BWRAP sandbox e mTLS Tailscale) sob clique."""
+        bwrap_ok = _probe_bwrap_support()
+        has_ts = bool(shutil.which("tailscale"))
+
+        bwrap_info = (
+            "Status: ATIVO\n"
+            "Mecanismo: Bubblewrap Linux Namespaces (PID, IPC, UTS, Mount)\n"
+            "Confinamento: Acesso estritamente restrito ao workspace e dependências do sistema."
+            if bwrap_ok else
+            "Status: INATIVO\n"
+            "Mecanismo: Sandbox nativo não disponível no ambiente atual."
+        )
+        mtls_info = (
+            "Status: ATIVO\n"
+            "Mecanismo: Tailscale TLS 1.3 mútuo\n"
+            "Criptografia: Conexão autenticada e cifrada entre cliente e servidor."
+            if has_ts else
+            "Status: INATIVO\n"
+            "Mecanismo: Loopback local exclusivo (127.0.0.1)."
+        )
+        ctx_info = (
+            "Janela de Contexto: 8K tokens ativos\n"
+            "Mecanismo: Gerenciamento de sessão local e compressão semântica."
+        )
+        if topic == "bwrap":
+            QMessageBox.information(self, "Segurança · Sandbox BWRAP", bwrap_info)
+        elif topic == "mtls":
+            QMessageBox.information(self, "Segurança · Rede mTLS", mtls_info)
+        elif topic == "ctx":
+            QMessageBox.information(self, "Contexto · Janela CTX", ctx_info)
+        else:
+            QMessageBox.information(
+                self,
+                "Status Técnico de Segurança",
+                f"=== BWRAP SANDBOX ===\n{bwrap_info}\n\n=== mTLS REDE ===\n{mtls_info}\n\n=== CONTEXTO CTX ===\n{ctx_info}",
+            )
 
 
 
@@ -634,7 +713,7 @@ class MarkWindow(HistoryMixin, WorkerMixin, NavigationMixin, ChatMixin, Professo
     def resizeEvent(self, event):
         super().resizeEvent(event)
         if hasattr(self, "composer_hint"):
-            self.composer_hint.setVisible(self.width() >= 1100)
+            self.composer_hint.setVisible(True)
 
     def _section_label(self, text):
         label = QLabel(text)

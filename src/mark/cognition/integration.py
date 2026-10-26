@@ -124,7 +124,22 @@ def is_simple_chat_interaction(text: str) -> bool:
         return True
     return bool(_SIMPLE_CHAT_RE.fullmatch(n))
 
+
+_SYSTEM_IDENTITY_RE = re.compile(
+    r"\b(?:qual|quais|em qual|que)\s+(?:e\s+)?(?:o\s+|seu\s+|teu\s+)?(?:modelo|model|ia|llm)\b|"
+    r"\b(?:est[aá]s?|est[aá]|ta|t[aá]|voce|voc[eê])\s+(?:a\s+)?(?:rodando|rodar|roda|executando|executar|executa|usando|usar|usa)\b|"
+    r"\b(?:modelo|model|ia|llm)\s+(?:em\s+)?(?:execu[cç][aã]o|uso|ativo)\b",
+    re.I,
+)
+
+
+def is_system_identity_query(text: str) -> bool:
+    from .domains import normalize
+    return bool(_SYSTEM_IDENTITY_RE.search(normalize(text)))
+
+
 def knowledge_context(text,cfg):
+    if is_system_identity_query(text): return RetrievalContext()
     config=cfg.get('cognition',{})
     if not config.get('enabled',True): return RetrievalContext()
     path=Path(config.get('knowledge_db',str(DEFAULT_DB)))

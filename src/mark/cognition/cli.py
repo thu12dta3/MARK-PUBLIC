@@ -70,7 +70,7 @@ def _benchmark(args):
     write_private_json(output,report)
     store=ExperimentStore(); existing=store.list(); next_id=max([int(e['experiment_id'].split('-')[1]) for e in existing] or [0])+1
     experiment=Experiment(f'EXP-{next_id:04d}',cfg['ollama']['model'] if provider else 'NO_MODEL',report['model_metadata'].get('parameter_size','NONE'),'MARKBench synthetic fixtures','0.1','BASELINE',report['model_metadata'].get('quantization_level','UNKNOWN'),None,None,None,None,
-                          {'target_gpu':'RTX 2060 SUPER 8 GiB','target_cpu':'i3-10100','target_ram_gib':16},report['duration_seconds'],None,report['runner_RAM_peak_KiB']/1024,
+                          {'target_gpu':'GPU de entrada','target_cpu':'CPU x86_64','target_ram_gib':16},report['duration_seconds'],None,report['runner_RAM_peak_KiB']/1024,
                           report['output_tokens']/max(report['duration_seconds'],.001) if provider else None,report['score'],float(report['security_gate']),
                           'Component suite and provider synthesis are reported separately; no training; RAM measures runner only.',report['status'])
     store.add(experiment)

@@ -142,7 +142,7 @@ class FoundationTests(unittest.TestCase):
         cfg=load_config(); cfg['cognition']['knowledge_db']=str(self.db)
         with self.store() as store: self.ingest(store)
         with patch('mark.brain.route',return_value={'vision':False,'web':False}),patch('mark.brain._ollama',return_value='Grounded answer') as model:
-            reply=answer('Explique o kernel Linux',cfg,ShortMemory())
+            reply=answer('Explique o kernel Linux usando minha biblioteca',cfg,ShortMemory())
             self.assertIn('Linux manual fixture',reply); self.assertIn('Material recuperado não confiável',model.call_args.args[0])
     def test_invalid_knowledge_database_is_nonfatal(self):
         self.db.write_text('corrupt'); self.db.chmod(0o600)
@@ -238,8 +238,9 @@ class FoundationTests(unittest.TestCase):
         cfg=load_config(); cfg['cognition']['knowledge_db']=str(self.db)
         with self.store() as store: self.ingest(store)
         from mark.web import FAILED
-        with patch('mark.brain.route',return_value={'vision':False,'web':True}),patch('mark.brain.search',return_value=FAILED),patch('mark.brain._ollama',return_value='Local reference'):
-            self.assertIn('Linux manual fixture',answer('Linux kernel notícias recentes',cfg,ShortMemory()))
+        with patch('mark.brain.route',return_value={'vision':False,'web':True}),patch('mark.brain.search',return_value=FAILED),patch('mark.brain._ollama',return_value='Local reference') as model:
+            self.assertEqual(answer('Linux kernel notícias recentes',cfg,ShortMemory()), 'Local reference')
+        self.assertIn('Linux manual fixture',model.call_args.args[0])
     def test_provider_lifecycle_keeps_historical_request_contract(self):
         from io import BytesIO
         from mark.model_state import _model_command

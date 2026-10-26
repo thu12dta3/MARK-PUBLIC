@@ -186,6 +186,7 @@ MODEL_CONTEXT_WINDOWS: dict[str, int] = {
     # Google Gemini
     "gemini-2.0-flash": 1_048_576,
     "gemini-2.0-flash-lite": 1_048_576,
+    "gemini-3.8-flash": 1_048_576,
     "gemini-1.5-pro": 2_097_152,
     "gemini-1.5-flash": 1_048_576,
     # OpenSource / Meta / Mistral / DeepSeek
@@ -197,11 +198,15 @@ MODEL_CONTEXT_WINDOWS: dict[str, int] = {
     "mistral-small": 32_768,
     "deepseek-chat": 64_000,
     "deepseek-reasoner": 64_000,
-    # Modelos locais / Qwen / Heretic
+    # Modelos locais / Qwen / Heretic / Mark 0.1
     "qwen2.5-coder": 32_768,
     "qwen2.5": 32_768,
     "qwen3": 32_768,
     "heretic": 32_768,
+    "mark-0.1": 32_768,
+    "mark-local": 32_768,
+    "mark_ai": 32_768,
+    "mark": 32_768,
 }
 
 DEFAULT_CONTEXT_WINDOW = 8_192
@@ -855,7 +860,7 @@ class GeminiProvider(BaseLLMProvider):
     def __init__(
         self,
         *,
-        model: str = "gemini-2.0-flash",
+        model: str = "gemini-3.8-flash",
         api_key: str | None = None,
         base_url: str = "https://generativelanguage.googleapis.com/v1beta",
         timeout: float = 60.0,
@@ -1255,6 +1260,15 @@ PROVIDER_REGISTRY: dict[str, type[BaseLLMProvider]] = {
     "local": LocalProvider,
 }
 
+try:
+    from .mark_local_provider import MarkLocalProvider
+
+    PROVIDER_REGISTRY["mark-local"] = MarkLocalProvider
+    PROVIDER_REGISTRY["mark_ai"] = MarkLocalProvider
+    PROVIDER_REGISTRY["mark"] = MarkLocalProvider
+except ImportError:
+    pass
+
 
 def create_llm_provider(
     provider_name: str,
@@ -1267,6 +1281,12 @@ def create_llm_provider(
 ) -> BaseLLMProvider:
     """Instancia um adaptador de provedor com base no nome e opções fornecidas."""
     normalized = provider_name.strip().lower()
+    if normalized in ("mark-local", "mark_ai", "mark") and normalized not in PROVIDER_REGISTRY:
+        from .mark_local_provider import MarkLocalProvider
+        PROVIDER_REGISTRY["mark-local"] = MarkLocalProvider
+        PROVIDER_REGISTRY["mark_ai"] = MarkLocalProvider
+        PROVIDER_REGISTRY["mark"] = MarkLocalProvider
+
     cls = PROVIDER_REGISTRY.get(normalized)
     if cls is None:
         raise ValueError(f"Provedor de LLM não reconhecido: '{provider_name}'. Suportados: {sorted(PROVIDER_REGISTRY.keys())}")

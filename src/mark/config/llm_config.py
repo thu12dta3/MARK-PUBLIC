@@ -295,6 +295,22 @@ ENV_KEY_MAP = {
     "mistral": "MISTRAL_API_KEY",
 }
 
+_PROVIDER_ALIASES = {
+    "google": "gemini",
+    "google ai studio": "gemini",
+    "google studio": "gemini",
+    "google studio api": "gemini",
+    "mark_ai": "mark-local",
+    "mark-ai": "mark-local",
+    "marklocal": "mark-local",
+    "mark": "mark-local",
+}
+
+
+def canonical_provider_name(name: str) -> str:
+    normalized = str(name).strip().lower()
+    return _PROVIDER_ALIASES.get(normalized, normalized)
+
 
 class LLMConfig:
     """Gerenciador central de configuração de provedores de LLM e perfis de agentes."""
@@ -318,16 +334,18 @@ class LLMConfig:
 
     def _init_defaults(self) -> None:
         """Inicializa os perfis padrão para provedores conhecidos e agentes do MARK."""
+        checkpoints_dir = os.environ.get("MARK_CHECKPOINTS_DIR", "./checkpoints")
         self.providers = {
             "ollama": ProviderProfile("ollama", "haervwe/qwen3-vl-4b-heretic:latest", base_url="http://127.0.0.1:11434"),
             "openai": ProviderProfile("openai", "gpt-4o", base_url="https://api.openai.com/v1"),
             "anthropic": ProviderProfile("anthropic", "claude-3-5-sonnet-20241022", base_url="https://api.anthropic.com/v1"),
-            "gemini": ProviderProfile("gemini", "gemini-2.0-flash", base_url="https://generativelanguage.googleapis.com/v1beta"),
+            "gemini": ProviderProfile("gemini", "gemini-3.8-flash", base_url="https://generativelanguage.googleapis.com/v1beta"),
             "groq": ProviderProfile("groq", "llama-3.3-70b-versatile", base_url="https://api.groq.com/openai/v1"),
             "openrouter": ProviderProfile("openrouter", "openrouter/auto", base_url="https://openrouter.ai/api/v1"),
             "deepseek": ProviderProfile("deepseek", "deepseek-chat", base_url="https://api.deepseek.com"),
             "mistral": ProviderProfile("mistral", "mistral-large-latest", base_url="https://api.mistral.ai/v1"),
             "local": ProviderProfile("local", "haervwe/qwen3-vl-4b-heretic:latest", base_url="http://127.0.0.1:11434/v1"),
+            "mark-local": ProviderProfile("mark-local", "mark-0.1-iq4_nl", base_url=checkpoints_dir, timeout=120.0),
         }
 
         # Perfis padrão dos agentes
@@ -361,7 +379,7 @@ class LLMConfig:
                 primary_provider="ollama",
                 primary_model="haervwe/qwen3-vl-4b-heretic:latest",
                 fallback_chain=[
-                    ("gemini", "gemini-2.0-flash"),
+                    ("gemini", "gemini-3.8-flash"),
                     ("groq", "llama-3.3-70b-versatile"),
                     ("ollama", "haervwe/qwen3-vl-4b-heretic:latest"),
                 ],
@@ -371,13 +389,13 @@ class LLMConfig:
             "ProfessorAgent": AgentProfileConfig(
                 agent_name="ProfessorAgent",
                 primary_provider="gemini",
-                primary_model="gemini-2.0-flash",
+                primary_model="gemini-3.8-flash",
                 fallback_chain=[
                     ("openai", "gpt-4o"),
                     ("anthropic", "claude-3-5-sonnet-20241022"),
-                    ("ollama", "haervwe/qwen3-vl-4b-heretic:latest"),
+                    ("deepseek", "deepseek-chat"),
                 ],
-                temperature=0.5,
+                temperature=0.3,
                 max_tokens=4096,
             ),
         }
@@ -417,7 +435,7 @@ class LLMConfig:
         if isinstance(prov_sec, dict):
             for name, conf in prov_sec.items():
                 if isinstance(conf, dict):
-                    norm_name = name.lower()
+                    norm_name = canonical_provider_name(name)
                     existing = self.providers.get(norm_name)
                     model = conf.get("model") or (existing.model if existing else "")
                     base_url = conf.get("base_url") or (existing.base_url if existing else None)
@@ -458,15 +476,18 @@ class LLMConfig:
         """Carrega chaves criptografadas salvas no cofre privado."""
         try:
             stored_providers = self.vault.list_providers()
+            stored_providers.sort(key=lambda name: canonical_provider_name(name) != name.strip().lower())
             for p_name in stored_providers:
                 key = self.vault.get_key(p_name)
                 if key:
                     register_secret_for_redaction(key)
-                    if p_name in self.providers:
-                        self.providers[p_name].api_key = key
+                    norm_name = canonical_provider_name(p_name)
+                    if norm_name in self.providers:
+                        if not self.providers[norm_name].api_key:
+                            self.providers[norm_name].api_key = key
                     else:
-                        self.providers[p_name] = ProviderProfile(
-                            name=p_name,
+                        self.providers[norm_name] = ProviderProfile(
+                            name=norm_name,
                             model="",
                             api_key=key,
                         )
@@ -492,11 +513,12 @@ class LLMConfig:
             key_val = os.environ.get(env_var, "").strip()
             if key_val:
                 register_secret_for_redaction(key_val)
-                if provider_name in self.providers:
-                    self.providers[provider_name].api_key = key_val
+                norm_name = canonical_provider_name(provider_name)
+                if norm_name in self.providers:
+                    self.providers[norm_name].api_key = key_val
                 else:
-                    self.providers[provider_name] = ProviderProfile(
-                        name=provider_name,
+                    self.providers[norm_name] = ProviderProfile(
+                        name=norm_name,
                         model="",
                         api_key=key_val,
                     )
@@ -511,7 +533,7 @@ class LLMConfig:
 
     def get_provider(self, name: str) -> ProviderProfile:
         """Obtém o perfil de configuração do provedor ou gera um novo vazio."""
-        norm = name.strip().lower()
+        norm = canonical_provider_name(name)
         if norm not in self.providers:
             self.providers[norm] = ProviderProfile(name=norm, model=self.default_model)
         return self.providers[norm]
@@ -540,8 +562,8 @@ class LLMConfig:
 
         available: dict[str, ProviderProfile] = {}
         for prov_name, profile in self.providers.items():
-            norm_name = prov_name.strip().lower()
-            if norm_name in {"ollama", "local", "vllm", "lmstudio"}:
+            norm_name = canonical_provider_name(prov_name)
+            if norm_name in {"ollama", "local", "vllm", "lmstudio", "mark-local"}:
                 continue
 
             key = profile.api_key
@@ -566,7 +588,7 @@ class LLMConfig:
 
     def set_provider_key(self, name: str, key: str, save_to_vault: bool = True) -> None:
         """Registra chave de API para o provedor, opcionalmente persistindo de forma cifrada no cofre."""
-        norm = name.strip().lower()
+        norm = canonical_provider_name(name)
         cleaned = key.strip()
         register_secret_for_redaction(cleaned)
 

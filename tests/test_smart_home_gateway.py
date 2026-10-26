@@ -371,9 +371,9 @@ class UIVisualReworkIntegrityTests(unittest.TestCase):
         rendered = message_html(
             "## Painel\n\nUse `smart_home_query_status` em [MARK](https://example.com).\n\n```python\nprint('ok')\n```"
         )
-        self.assertIn("#4fd1c5", rendered)
-        self.assertIn("#63b3ed", rendered)
-        self.assertIn("#0d131f", rendered)
+        self.assertIn("#00D8F6", rendered)
+        self.assertIn("#16191D", rendered)
+        self.assertIn("#0B0D0F", rendered)
 
         with patch.object(desktop.MarkWindow, "_load_history"), patch.object(desktop.MarkWindow, "refresh_status"):
             window = desktop.MarkWindow()
@@ -386,10 +386,10 @@ class UIVisualReworkIntegrityTests(unittest.TestCase):
             asst_b = window.findChild(QFrame, "assistantBubble")
             self.assertIsNotNone(user_b)
             self.assertIsNotNone(asst_b)
-            self.assertIn("#2D333B", user_b.styleSheet())
+            self.assertIn("#20252C", user_b.styleSheet())
             self.assertIn("border: none", user_b.styleSheet())
             self.assertIn("border-radius: 8px", user_b.styleSheet())
-            self.assertIn("#1A1D21", asst_b.styleSheet())
+            self.assertIn("#121417", asst_b.styleSheet())
             self.assertIn("border-radius: 0px", asst_b.styleSheet())
             self.assertNotIn("transparent", user_b.styleSheet())
             self.assertNotIn("transparent", asst_b.styleSheet())

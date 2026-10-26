@@ -48,7 +48,8 @@ graph TD
     end
 
     subgraph "Inference Providers"
-        RoutingEngine -->|Primary / Local| OllamaRuntime["Local Ollama Service (Qwen-VL / Instruct)"]
+        RoutingEngine -->|Primary / Local Native| MarkLocalRuntime["MarkLocalProvider (Mark 0.1 IQ4_NL / 32k MLA / 10 Domains)"]
+        RoutingEngine -->|Primary / Local Service| OllamaRuntime["Local Ollama Service (Qwen-VL / Instruct)"]
         RoutingEngine -->|Fallback / Cloud| CloudProviders["Encrypted Cloud Gateway (Gemini / Groq / OpenRouter)"]
     end
 
@@ -59,7 +60,7 @@ graph TD
     end
 
     subgraph "Sensors & Multi-Modal I/O"
-        Router --> AudioEngine["Audio Pipeline: Whisper CLI & Piper TTS"]
+        Router --> AudioEngine["Audio Pipeline: Whisper CLI, Piper & Acoustic Voice Formatter"]
         Router --> VisionEngine["Vision Pipeline: RTSP / RTSPS Stream Capturer"]
     end
 
@@ -75,16 +76,18 @@ graph TD
 
 | Subsystem | Primary Modules | Responsibility | Implementation Status |
 | :--- | :--- | :--- | :--- |
-| **Core Brain & Router** | `src/mark/brain.py`, `src/mark/cognition/agent_loop.py` | Request orchestration, intent routing, context formatting, multi-turn session lifecycle. | `IMPLEMENTED`, `VERIFIED` |
+| **Core Brain & Router** | `src/mark/brain.py`, `src/mark/cognition/agent_loop.py` | Request orchestration, intent routing, identity anti-sycophancy bypass, context formatting, multi-turn session lifecycle. | `IMPLEMENTED`, `VERIFIED` |
+| **Local Inference Runtime** | `src/mark/cognition/mark_local_provider.py` | Native Mark 0.1 IQ4_NL quantization, DeepSeek MLA 32k context, 10-domain steering, ElevenLabs/Fish Speech voice acoustic formatting, 2.2 GB VRAM ceiling. | `IMPLEMENTED`, `VERIFIED` |
 | **MARK Link (Transport & Mesh)** | `src-rust/mark_link/`, `src/mark/link/` | Resilient P2P network daemon, mutual P-256 handshake, directional AES-256-GCM framing, failover, blind relay router. | `IMPLEMENTED`, `VERIFIED` |
 | **Native MCP Bridge** | `src-rust/mark_core/src/mcp/` | Rust-native Model Context Protocol engine, zero-trust capability separation, memory quotas, path normalization. | `IMPLEMENTED`, `VERIFIED` |
 | **Cognition & Hybrid RAG** | `src/mark/knowledge/`, `src/mark/cognition/` | Document ingestion, chunking, inverted-index lexical retrieval, source citation, scoped memory. | `IMPLEMENTED`, `TESTED` |
 | **Deterministic Tools** | `src/mark/cognition/tools.py`, `chemistry.py` | Mathematical unit conversion, molar mass calculation, verified computation. | `IMPLEMENTED`, `TESTED` |
-| **Audio Processing** | `src/mark/audio.py`, `src/mark/tts.py` | VAD recording, dual-model Whisper STT, Piper ONNX / eSpeak-ng dual-voice synthesis. | `IMPLEMENTED`, `TESTED` |
+| **Audio Processing** | `src/mark/audio.py`, `src/mark/tts.py` | VAD recording, dual-model Whisper STT, Piper ONNX / eSpeak-ng dual-voice synthesis, acoustic TTS formatting. | `IMPLEMENTED`, `TESTED` |
 | **Vision Acquisition** | `src/mark/vision.py`, `src/mark/vision_live.py` | RTSP/RTSPS frame acquisition, validation, resizing, base64 payload preparation. | `IMPLEMENTED`, `TESTED` |
 | **Cryptographic Vault** | `src/mark/provider_settings.py`, `src/mark/pki.py` | AES-256-GCM keystore for external API tokens; device identity authentication. | `IMPLEMENTED`, `TESTED` |
 | **Process Sandboxing** | `src/mark/sandbox.py`, `src/mark/evolution/sandbox.py` | Kernel-level unshare, user namespaces, filesystem tmpfs overlays, resource quotas. | `IMPLEMENTED`, `TESTED` |
-| **Desktop Workstation UI** | `src/mark/ui/main_window.py`, `src/mark/desktop_*` | PyQt6 reactive interface, dark/light theme, Markdown rendering, conversation history, Device Hub. | `IMPLEMENTED`, `TESTED` |
+| **Desktop Workstation UI** | `src/mark/ui/main_window.py`, `src/mark/desktop_*` | PyQt6 reactive interface, 16:9 symmetrical 920px central column, charcoal dark palette, Inter typography, pill composer, code copy buttons. | `IMPLEMENTED`, `TESTED` |
+| **Defensive Bootstrapping** | `src/mark/desktop_helpers.py`, `mobile_api.py` | Automatic POSIX 0700/0600 directory/token provisioning, 32-byte urlsafe token generation, FileNotFoundError resilience. | `IMPLEMENTED`, `VERIFIED` |
 | **Android Client & JNI** | `mobile-android/` | Android 14 client, native JNI bindings (`MarkLinkNative`), Keystore ECDSA, Compose UI. | `IMPLEMENTED`, `VERIFIED` |
 | **Wear OS Companion** | `mark-wear/`, `mark-companion/` | Wear OS launcher, custom watchface, Bluetooth RFCOMM link, health telemetry. | `IMPLEMENTED`, `VERIFIED` |
 
